@@ -1,0 +1,45 @@
+{
+  "name": "document-api",
+  "version": "1.0.0",
+  "description": "A NestJS application for uploading and retrieving documents with Prisma.js and RabbitMQ support.",
+  "main": "dist/main.js",
+  "scripts": {
+    "prebuild": "npx prisma generate",
+    "build": "npx nest build",
+    "prestart": "npx prisma generate",
+    "start": "node dist/main.js",
+    "dev": "npx nest start --watch",
+    "test": "jest",
+    "test:e2e": "jest --config test/jest-e2e.json"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.0.16",
+    "@nestjs/core": "^11.0.16",
+    "@nestjs/platform-express": "^11.0.16",
+    "@prisma/client": "^6.6.0",
+    "amqplib": "^0.10.7",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.1",
+    "dotenv": "^16.5.0",
+    "multer": "^1.4.5-lts.2",
+    "prisma": "^6.6.0",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.6",
+    "@nestjs/testing": "^11.0.16",
+    "@types/amqplib": "^0.10.7",
+    "@types/multer": "^1.4.12",
+    "@types/uuid": "^10.0.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.3.1",
+    "ts-loader": "^9.0.0",
+    "typescript": "^5.8.3"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "prisma": {
+    "schema": "./src/prisma/schema.prisma"
+  }
+}
