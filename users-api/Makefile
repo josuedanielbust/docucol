@@ -1,5 +1,5 @@
 # Variables
-IMAGE_NAME := document-api
+IMAGE_NAME := users-api
 IMAGE_TAG := latest
 DOCKER_REGISTRY := 
 FULL_IMAGE_NAME := $(DOCKER_REGISTRY)$(IMAGE_NAME):$(IMAGE_TAG)
