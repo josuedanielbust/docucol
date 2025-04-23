@@ -3,11 +3,11 @@ import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { catchError, lastValueFrom, map } from 'rxjs';
 import {
-  DocumentResponseDto, 
-  GetDocumentRequestDto,
   ValidateUserResponseDto,
   RegisterOperatorRequestDto,
-  RegisterOperatorResponseDto
+  RegisterOperatorResponseDto,
+  AuthenticateDocumentRequestDto,
+  AuthenticateDocumentResponseDto
 } from './dto/gov-api.dto';
 
 @Injectable()
@@ -103,21 +103,25 @@ export class GovApiService {
   }
 
   /**
-   * Fetches document from the government API
-   * @param data Document request parameters
-   * @returns Document data from the government API
+   * Authenticates document with the government API
+   * @param data Authenticate document request parameters
+   * @returns Document authentication from the government API
    */
-  async getDocument(data: GetDocumentRequestDto): Promise<DocumentResponseDto> {
+  async authenticateDocument(data: AuthenticateDocumentRequestDto): Promise<AuthenticateDocumentResponseDto> {
     try {
       const response = this.httpService.post(
-        `${this.apiBaseUrl}/get-document`,
-        data
+        `${this.apiBaseUrl}/authenticateDocument`,
+        {
+          idCitizen: data.userId,
+          UrlDocument: data.documentPath,
+          documentTitle: data.documentTitle
+        }
       ).pipe(
         map(res => res.data),
         catchError(err => {
-          this.logger.error(`Error fetching document: ${err.message}`);
+          this.logger.error(`Error authenticating document: ${err.message}`);
           throw new HttpException(
-            err.response?.data?.message || 'Failed to retrieve document',
+            err.response?.data?.message || 'Failed to authenticate document',
             err.response?.status || HttpStatus.INTERNAL_SERVER_ERROR
           );
         })
@@ -125,9 +129,9 @@ export class GovApiService {
 
       return await lastValueFrom(response);
     } catch (error) {
-      this.logger.error(`Error in getDocument: ${(error as Error).message}`);
+      this.logger.error(`Error in authenticateDocument: ${(error as Error).message}`);
       throw new HttpException(
-        'Failed to retrieve document from government system',
+        'Failed to authenticate document from government system',
         HttpStatus.INTERNAL_SERVER_ERROR
       );
     }

@@ -1,28 +1,21 @@
-import { IsString, IsNotEmpty, IsOptional, IsBoolean } from 'class-validator';
+import { IsString, IsNotEmpty } from 'class-validator';
 
-export class GetDocumentRequestDto {
-  @IsString()
-  @IsNotEmpty()
-  documentId!: string;
-
+export class AuthenticateDocumentRequestDto {
   @IsString()
   @IsNotEmpty()
   userId!: string;
 
-  @IsBoolean()
-  @IsOptional()
-  includeMetadata?: boolean;
+  @IsString()
+  @IsNotEmpty()
+  documentPath!: string;
+  
+  @IsString()
+  @IsNotEmpty()
+  documentTitle!: string;
 }
 
-export class DocumentResponseDto {
-  documentId!: string;
-  title!: string;
-  contentType!: string;
-  issuedBy!: string;
-  issuedDate!: string;
-  expirationDate?: string;
-  content!: string; // Base64 encoded document content
-  metadata?: Record<string, any>;
+export class AuthenticateDocumentResponseDto {
+  message?: string;
 }
 
 export class ValidateUserResponseDto {
@@ -32,9 +25,20 @@ export class ValidateUserResponseDto {
 }
 
 export class RegisterOperatorRequestDto {
+  @IsString()
+  @IsNotEmpty()
   name!: string;
+  
+  @IsString()
+  @IsNotEmpty()
   address!: string;
+  
+  @IsString()
+  @IsNotEmpty()
   contactMail!: string;
+  
+  @IsString()
+  @IsNotEmpty()
   participants!: string;
 }
 

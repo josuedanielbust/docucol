@@ -2,10 +2,10 @@ import { Controller, Post, Get, Body, Param, UseGuards, Logger } from '@nestjs/c
 import { GovApiService } from './gov-api.service';
 import { 
   ValidateUserResponseDto,
-  GetDocumentRequestDto,
-  DocumentResponseDto,
   RegisterOperatorRequestDto,
-  RegisterOperatorResponseDto
+  RegisterOperatorResponseDto,
+  AuthenticateDocumentRequestDto,
+  AuthenticateDocumentResponseDto
 } from './dto/gov-api.dto';
 
 @Controller('gov-api')
@@ -30,11 +30,11 @@ export class GovApiController {
     return this.govApiService.registerOperator(registerOperatorDto);
   }
 
-  @Post('get-document')
+  @Post('documents/authenticate')
   async getDocument(
-    @Body() getDocumentDto: GetDocumentRequestDto,
-  ): Promise<DocumentResponseDto> {
-    this.logger.log(`Requested document ${getDocumentDto.documentId}`);
-    return this.govApiService.getDocument(getDocumentDto);
+    @Body() authenticateDocument: AuthenticateDocumentRequestDto,
+  ): Promise<AuthenticateDocumentResponseDto> {
+    this.logger.log(`Requested document ${authenticateDocument.documentTitle}`);
+    return this.govApiService.authenticateDocument(authenticateDocument);
   }
 }
