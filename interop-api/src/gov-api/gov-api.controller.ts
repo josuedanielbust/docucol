@@ -1,11 +1,14 @@
-import { Controller, Post, Get, Body, Param, UseGuards, Logger } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, Logger, Delete } from '@nestjs/common';
 import { GovApiService } from './gov-api.service';
 import { 
   ValidateUserResponseDto,
   RegisterOperatorRequestDto,
   RegisterOperatorResponseDto,
   AuthenticateDocumentRequestDto,
-  AuthenticateDocumentResponseDto
+  AuthenticateDocumentResponseDto,
+  RegisterUserRequestDto,
+  RegisterUserResponseDto,
+  UnregisterUserResponseDto
 } from './dto/gov-api.dto';
 
 @Controller('gov-api')
@@ -14,6 +17,22 @@ export class GovApiController {
 
   constructor(private readonly govApiService: GovApiService) {}
 
+  @Post('user')
+  async registerUser(
+    @Body() registerUser: RegisterUserRequestDto,
+  ): Promise<RegisterUserResponseDto> {
+    this.logger.log(`Register user for document ${registerUser.userId}`);
+    return this.govApiService.registerUser(registerUser);
+  }
+  
+  @Delete('user/:id')
+  async unregisterUser(
+    @Param('id') userId: string,
+  ): Promise<UnregisterUserResponseDto> {
+    this.logger.log(`Register user for document ${userId}`);
+    return this.govApiService.unregisterUser(userId);
+  }
+  
   @Get('user/validate/:id')
   async validateUser(
     @Param('id') userId: string,

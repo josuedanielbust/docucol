@@ -45,3 +45,33 @@ export class RegisterOperatorRequestDto {
 export class RegisterOperatorResponseDto {
   operatorId!: string;
 }
+
+export class RegisterUserRequestDto {
+  @IsString()
+  @IsNotEmpty()
+  userId!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  name!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  address!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  email!: string;
+}
+
+export class RegisterUserResponseDto {
+  userId?: string;
+  message!: string;
+  registered!: boolean;
+}
+
+export class UnregisterUserResponseDto {
+  userId?: string;
+  message!: string;
+  unregistered!: boolean;
+}
