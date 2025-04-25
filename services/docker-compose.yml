@@ -137,7 +137,6 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
-      - API_BASE_URL=http://interop:3000/interop
       - USERS_API_URL=http://users-api:3000
       - DOCUMENT_API_URL=http://document-api:3000
       - RABBITMQ_URL=amqp://user:password@document-rabbitmq:5672
