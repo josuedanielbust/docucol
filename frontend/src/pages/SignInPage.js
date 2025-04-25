@@ -16,7 +16,7 @@ const LoginPage = () => {
     setErrorMsg('');
 
     try {
-      const response = await axios.post('http://localhost:3000/api/signin', {
+      const response = await axios.post('http://localhost:3000/auth/signin', {
         email,
         password,
       });

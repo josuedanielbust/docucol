@@ -29,7 +29,7 @@ const RegisterPage = () => {
     setSuccess('');
 
     try {
-      await axios.post('http://localhost:3000/api/auth/signup', formData);
+      await axios.post('http://localhost:3000/auth/signup', formData);
       setSuccess('Usuario registrado con éxito. Serás redirigido al login.');
       setTimeout(() => navigate('/signin'), 2000);
     } catch (err) {
