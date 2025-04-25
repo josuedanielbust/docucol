@@ -8,12 +8,14 @@ This service is designed to provide an interoperation layer between DocuCol and 
 - Integration with government document systems
 - Document validation and retrieval
 - Secure document history tracking
+- Asynchronous messaging via RabbitMQ for document transfers
 
 ## Technologies Used
 
 - **NestJS**: A progressive Node.js framework for building efficient and scalable server-side applications.
 - **Prisma**: A modern database toolkit that simplifies database access and management.
 - **JWT**: JSON Web Tokens for secure authentication.
+- **RabbitMQ**: Message broker for asynchronous communication between services.
 
 ## Modules
 
@@ -25,6 +27,9 @@ Manages user profiles and information.
 
 ### GovApi Module
 Connects to external government APIs to validate users and retrieve official documents.
+
+### Transfer Module
+Manages document transfers between users and sends notifications through RabbitMQ.
 
 ## Project Structure
 
@@ -54,6 +59,12 @@ interop-api
 │   │   ├── govapi.service.ts
 │   │   └── entities
 │   │       └── document.entity.ts
+│   ├── transfer
+│   │   ├── transfer.controller.ts
+│   │   ├── transfer.module.ts
+│   │   ├── transfer.service.ts
+│   │   └── dto
+│   │       └── transfer.dto.ts
 │   └── prisma
 │       ├── prisma.module.ts
 │       ├── prisma.service.ts
@@ -86,7 +97,15 @@ interop-api
 
 ## Configuration
 
-Create a `.env` file in the root directory and add your database connection string and JWT secret.
+Create a `.env` file in the root directory and add the following:
+
+```
+DATABASE_URL=postgresql://user:password@localhost:5432/mydb
+JWT_SECRET=your_jwt_secret
+GOV_CARPETA_BASE_URL=https://govcarpeta-apis-4905ff3c005b.herokuapp.com
+RABBITMQ_URL=amqp://localhost:5672
+RABBITMQ_QUEUE=documents_queue
+```
 
 ## Running the Application
 

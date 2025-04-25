@@ -9,9 +9,6 @@ RUN npm install
 # Copy source code
 COPY . .
 
-# Generate Prisma client
-RUN npx prisma generate
-
 # Build the application
 RUN npm run build
 
@@ -24,10 +21,8 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install --only=production
 
-# Copy generated Prisma client and built application
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+# Copy built application
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/src/prisma ./src/prisma
 
 # Set environment variables
 ENV NODE_ENV=production

@@ -12,5 +12,9 @@ export default () => ({
   },
   govCarpeta: {
     baseUrl: process.env.GOV_CARPETA_BASE_URL || 'https://govcarpeta-apis-4905ff3c005b.herokuapp.com'
+  },
+  rabbitmq: {
+    url: process.env.RABBITMQ_URL || 'amqp://localhost:5672',
+    queue: process.env.RABBITMQ_QUEUE || 'documents_queue'
   }
 });

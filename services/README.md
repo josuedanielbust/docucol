@@ -1,60 +1,76 @@
-# Docker Compose Setup for PostgreSQL and RabbitMQ
+# Infrastructure Services for DocuCol
 
-This project provides a Docker Compose setup for running PostgreSQL and RabbitMQ services. Below are the instructions for setting up and running the containers.
+This directory contains Docker Compose configuration for running the core infrastructure services required by the DocuCol application. The setup includes PostgreSQL for data persistence and RabbitMQ for message queuing.
 
 ## Prerequisites
 
-- Docker installed on your machine
-- Docker Compose installed
+- Docker Engine (version 20.10.0+)
+- Docker Compose (version 2.0.0+)
+- Properly configured `.env` file (see Environment Configuration section)
 
-## Project Structure
+## Architecture Context
+
+These services represent the infrastructure layer in the DocuCol system architecture:
+
+- **PostgreSQL**: Primary data store for application persistence
+- **RabbitMQ**: Message broker for asynchronous communication between services
+
+## Directory Structure
 
 ```
-docker-compose-setup
-├── docker-compose.yml
-├── .env
-└── README.md
+services/
+├── docker-compose.yml   # Service definitions and configuration
+├── .env                 # Environment variables (create from .env.example)
+└── README.md            # This documentation file
 ```
 
-## Environment Variables
+## Environment Configuration
 
-The project uses a `.env` file to manage environment variables. Ensure that the following variables are set correctly in the `.env` file:
+Create a `.env` file in this directory with the following variables:
 
-- `DATABASE_URL`: Connection string for PostgreSQL
-- `RABBITMQ_URL`: Connection string for RabbitMQ
-- `RABBITMQ_QUEUE`: Name of the RabbitMQ queue
-- `PORT`: Port on which the application will run
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `DATABASE_URL` | PostgreSQL connection string | `postgresql://postgres:password@localhost:5432/docucol` |
+| `RABBITMQ_URL` | RabbitMQ connection URL | `amqp://guest:guest@localhost:5672/` |
+| `RABBITMQ_QUEUE` | Default queue name | `docucol_events` |
+| `PORT` | Application port | `3000` |
 
-## Running the Services
+## Usage Instructions
 
-1. Clone the repository or download the project files.
-2. Navigate to the project directory:
+### Starting Services
 
-   ```bash
-   cd docker-compose-setup
-   ```
+```bash
+# From the services directory
+docker-compose up -d
+```
 
-3. Start the services using Docker Compose:
+This command starts all services in detached mode. Use `docker-compose logs -f` to follow the logs.
 
-   ```bash
-   docker-compose up -d
-   ```
+### Stopping Services
 
-   This command will start the PostgreSQL and RabbitMQ services in detached mode.
+```bash
+docker-compose down
+```
 
-4. To stop the services, run:
+Add `-v` flag to remove volumes and delete persistent data.
 
-   ```bash
-   docker-compose down
-   ```
+## Service Access
 
-## Accessing the Services
+| Service | Access URL | Default Credentials |
+|---------|------------|---------------------|
+| PostgreSQL | `localhost:5432` | Username: `postgres`<br>Password: From `.env` |
+| RabbitMQ | `localhost:5672` (AMQP)<br>`localhost:15672` (Management UI) | Username: `guest`<br>Password: `guest` |
 
-- PostgreSQL will be accessible on `localhost:5432`.
-- RabbitMQ will be accessible on `localhost:5672`.
+## Integration with DocuCol Components
 
-You can use a PostgreSQL client or RabbitMQ management tools to interact with the services.
+Other DocuCol components connect to these services using the environment variables defined in their respective configuration files. See the main architecture documentation for component interaction details.
 
-## Additional Information
+## Troubleshooting
 
-For more details on how to configure and use PostgreSQL and RabbitMQ, refer to their official documentation.
+If services fail to start properly, check:
+1. Docker daemon is running
+2. Required ports are not in use
+3. Environment variables are properly configured
+4. Docker has sufficient resources allocated
+
+For detailed logs, run `docker-compose logs [service_name]`.
