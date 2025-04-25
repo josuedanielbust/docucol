@@ -72,6 +72,40 @@ The system uses:
 - WebSockets for real-time collaboration features
 - Message queues for asynchronous processing
 
+## Containerization Strategy
+
+DocuCol follows a microservices containerization pattern with these key features:
+
+### Build Context and Dockerfile Structure
+- Each microservice (User Service, Document Service, etc.) has its own Dockerfile
+- Build contexts are set to the root directory of each service
+- This approach supports independent versioning and deployment
+
+### Service Dependencies
+- Dependencies between services are explicitly defined using health checks
+- Services start in the correct order only when dependencies are healthy
+- Creates a reliable startup sequence in the distributed system
+
+### API Gateway Configuration
+- Traefik serves as the API gateway with path-based routing
+- Each service includes prefix handling middleware
+- Supports both HTTP and HTTPS endpoints
+
+### Path Handling
+- Path prefix stripping middleware ensures clean service interfaces
+- External routing paths are stripped before requests reach services
+- Promotes better service isolation and independence
+
+### Health Checks
+- Database and message broker services include health checks
+- Application services wait for data stores to be ready
+- Improves overall system reliability and startup consistency
+
+### Security Considerations
+- API Gateway is the only component exposing ports to the host network
+- Service-to-service communication occurs over internal Docker network
+- Docker socket mounts are configured with read-only access
+
 ## References
 
 - [System Context Diagram](./C1-SystemContext.md)

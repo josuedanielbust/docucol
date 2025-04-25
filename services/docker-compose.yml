@@ -1,8 +1,7 @@
-version: '3.8'
-
 name: docucol
 
 services:
+  # Database services (existing)
   document-postgres:
     image: postgres:latest
     environment:
@@ -13,6 +12,15 @@ services:
       - "5432:5432"
     volumes:
       - document-postgres_data:/var/lib/postgresql/data
+    networks:
+      - docucol-network
+    labels:
+      - "traefik.enable=false"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d mydb"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   document-rabbitmq:
     image: rabbitmq:management
@@ -22,6 +30,15 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
+    networks:
+      - docucol-network
+    labels:
+      - "traefik.enable=false"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   users-postgres:
     image: postgres:latest
@@ -33,7 +50,135 @@ services:
       - "5433:5432"
     volumes:
       - user-postgres_data:/var/lib/postgresql/data
+    networks:
+      - docucol-network
+    labels:
+      - "traefik.enable=false"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d mydb"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # API Gateway
+  traefik:
+    image: traefik:v2.11
+    command:
+      - "--api.insecure=true"  # Enable dashboard (disable in production)
+      - "--providers.docker=true"  # Enable Docker provider
+      - "--providers.docker.exposedbydefault=false"  # Don't expose by default
+      - "--entrypoints.web.address=:80"  # Define web entrypoint
+      - "--entrypoints.websecure.address=:443"  # Define secure web entrypoint
+      - "--accesslog=true"  # Enable access logs
+    ports:
+      - "80:80"      # HTTP
+      - "443:443"    # HTTPS
+      - "8080:8080"  # Dashboard (disable in production)
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - docucol-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=Host(`traefik.docucol.local`)"
+      - "traefik.http.routers.dashboard.service=api@internal"
+
+  # Microservices with Dockerfile references
+  users-api:
+    build:
+      context: ../users-api
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://user:password@users-postgres:5432/mydb?schema=public
+      - PORT=3000
+    depends_on:
+      users-postgres:
+        condition: service_healthy
+    networks:
+      - docucol-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.users.rule=PathPrefix(`/users`)"
+      - "traefik.http.services.users.loadbalancer.server.port=3000"
+      - "traefik.http.middlewares.users-stripprefix.stripprefix.prefixes=/users"
+      - "traefik.http.routers.users.middlewares=users-stripprefix"
+
+  document-api:
+    build:
+      context: ../document-api
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://user:password@document-postgres:5432/mydb?schema=public
+      - RABBITMQ_URL=amqp://user:password@document-rabbitmq:5672
+      - PORT=3000
+      - UPLOADS_DIRECTORY=/app/uploads
+    volumes:
+      - document_uploads:/app/uploads
+    depends_on:
+      document-postgres:
+        condition: service_healthy
+      document-rabbitmq:
+        condition: service_healthy
+    networks:
+      - docucol-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.documents.rule=PathPrefix(`/documents`)"
+      - "traefik.http.services.documents.loadbalancer.server.port=3000"
+      - "traefik.http.middlewares.documents-stripprefix.stripprefix.prefixes=/documents"
+      - "traefik.http.routers.documents.middlewares=documents-stripprefix"
+
+  interop-api:
+    build:
+      context: ../interop-api
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - USERS_API_URL=http://users-api:3000
+      - DOCUMENT_API_URL=http://document-api:3000
+      - RABBITMQ_URL=amqp://user:password@document-rabbitmq:5672
+    depends_on:
+      - users-api
+      - document-api
+    networks:
+      - docucol-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.interop.rule=PathPrefix(`/interop`)"
+      - "traefik.http.services.interop.loadbalancer.server.port=3000"
+      - "traefik.http.middlewares.interop-stripprefix.stripprefix.prefixes=/interop"
+      - "traefik.http.routers.interop.middlewares=interop-stripprefix"
+
+  # Document Storage HTTP Server
+  document-storage:
+    image: nginx:alpine
+    volumes:
+      - document_uploads:/usr/share/nginx/html:ro
+      - ./config/nginx/document-storage.conf:/etc/nginx/conf.d/default.conf:ro
+    environment:
+      - NGINX_ENTRYPOINT_QUIET_LOGS=0  # Enable verbose logging
+    networks:
+      - docucol-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/index.html", "||", "exit", "1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.storage.rule=PathPrefix(`/storage`)"
+      - "traefik.http.services.storage.loadbalancer.server.port=80"
+      - "traefik.http.middlewares.storage-stripprefix.stripprefix.prefixes=/storage"
+      - "traefik.http.routers.storage.middlewares=storage-stripprefix"
 
 volumes:
   document-postgres_data:
   user-postgres_data:
+  document_uploads:
+
+networks:
+  docucol-network:
+    driver: bridge

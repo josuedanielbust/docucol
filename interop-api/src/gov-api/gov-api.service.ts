@@ -38,7 +38,11 @@ export class GovApiService {
         map((res) => {
           switch (res.status) {
             case HttpStatus.OK:
-              return { exists: true, userId, message: res.data }
+              if (res.data.message && res.data.message.includes(this.configService.get('OPERATOR_NAME'))) {
+                return { exists: true, userId, message: res.data }
+              } else {
+                return { exists: false, userId, message: res.data }
+              }
             case HttpStatus.NO_CONTENT:
               return { exists: false, userId, message: res.data }
             default:
