@@ -75,3 +75,9 @@ export class UnregisterUserResponseDto {
   message!: string;
   unregistered!: boolean;
 }
+
+export class RegisterTransferEndpointsResponseDto {
+  operatorId!: string;
+  status?: boolean;
+  message?: string;
+}

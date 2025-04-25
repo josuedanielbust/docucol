@@ -2,6 +2,7 @@ import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { catchError, lastValueFrom, map } from 'rxjs';
+const hostname = require('os').hostname();
 import {
   ValidateUserResponseDto,
   RegisterOperatorRequestDto,
@@ -10,7 +11,8 @@ import {
   AuthenticateDocumentResponseDto,
   RegisterUserRequestDto,
   RegisterUserResponseDto,
-  UnregisterUserResponseDto
+  UnregisterUserResponseDto,
+  RegisterTransferEndpointsResponseDto
 } from './dto/gov-api.dto';
 
 @Injectable()
@@ -185,11 +187,54 @@ export class GovApiService {
         })
       );
 
+      const transferEndpoints = await this.registerTransferEndpoints();
+
       return await lastValueFrom(response);
     } catch (error) {
       this.logger.error(`Error registering operator: ${(error as Error).message}`);
       throw new HttpException(
         'Failed to register operator from government system',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  /**
+   * Register transfer endpoints on the government API
+   * @returns code status from the government API
+   */
+  async registerTransferEndpoints(): Promise<RegisterTransferEndpointsResponseDto> {
+    try {
+      const operatorId = this.configService.get('OPERATOR_ID');
+
+      const baseUrl = this.configService.get('API_BASE_URL');
+      
+      const response = this.httpService.post(
+        `${this.apiBaseUrl}/registerTransferEndPoint`,
+        {
+          idOperator: operatorId,
+          endPoint: `${baseUrl}/transfer/receive`,
+          endPointConfirm: `${baseUrl}/transfer/confirm`
+        }
+      ).pipe(
+        map((res) => {
+          console.log(res.data);
+          return { operatorId, message: res.data };
+        }),
+        catchError(err => {
+          this.logger.error(`Error registering transfer endpoints for operator: ${err.message}`);
+          throw new HttpException(
+        err.response?.data?.message || 'Failed to register transfer endpoints for operator',
+        err.response?.status || HttpStatus.INTERNAL_SERVER_ERROR
+          );
+        })
+      );
+
+      return await lastValueFrom(response);
+    } catch (error) {
+      this.logger.error(`Error registering transfer endpoints for operator: ${(error as Error).message}`);
+      throw new HttpException(
+        'Failed to register transfer endpoints operator from government system',
         HttpStatus.INTERNAL_SERVER_ERROR
       );
     }
