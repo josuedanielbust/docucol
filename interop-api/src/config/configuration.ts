@@ -14,16 +14,7 @@ export default () => ({
     baseUrl: process.env.GOV_CARPETA_BASE_URL || 'https://govcarpeta-apis-4905ff3c005b.herokuapp.com'
   },
   rabbitmq: {
-    url: process.env.RABBITMQ_URL,
-    host: process.env.RABBITMQ_HOST || 'localhost',
-    port: parseInt(process.env.RABBITMQ_PORT || '5672', 10),
-    username: process.env.RABBITMQ_USER || 'user',
-    password: process.env.RABBITMQ_PASSWORD || 'password',
-    queue: process.env.RABBITMQ_QUEUE || 'docucol_events',
-  },
-  redis: {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: process.env.REDIS_PORT || '6379',
-    password: process.env.REDIS_PASSWORD || ''
+    url: process.env.RABBITMQ_URL || 'amqp://localhost:5672',
+    queue: process.env.RABBITMQ_QUEUE || 'documents_queue'
   }
 });

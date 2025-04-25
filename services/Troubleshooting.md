@@ -6,123 +6,65 @@ This guide provides steps to diagnose and resolve issues with the document stora
 
 ### Files Not Being Served
 
-If files are not being served by MinIO, follow these steps to diagnose and resolve the issue:
+If files are not being served by the document-storage service, follow these steps to diagnose and resolve the issue:
 
-1. **Check MinIO Server Health**
+1. **Check File Existence**
 
-   Verify that MinIO server is running:
+   Verify that files exist in the volume:
    ```bash
-   docker exec -it $(docker compose ps -q minio) curl -f http://localhost:9000/minio/health/live
+   docker exec -it $(docker compose ps -q document-api) ls -la /app/uploads
    ```
 
-2. **Check Bucket Existence**
+2. **Check File Permissions**
 
-   Ensure the bucket exists:
+   Verify file permissions in the volume:
    ```bash
-   docker exec -it $(docker compose ps -q minio) mc config host add local http://localhost:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}
-   docker exec -it $(docker compose ps -q minio) mc ls local/
+   docker exec -it $(docker compose ps -q document-api) stat -c "%a %n" /app/uploads/index.html
    ```
 
-3. **List Objects in Bucket**
+3. **Check Nginx Logs**
 
-   List files in the bucket:
+   Examine Nginx logs for error messages:
    ```bash
-   docker exec -it $(docker compose ps -q minio) mc ls local/${MINIO_BUCKET}/
+   docker logs $(docker compose ps -q document-storage)
    ```
 
-4. **Check MinIO Logs**
+4. **Fix Permissions**
 
-   Examine MinIO logs for error messages:
+   Run the permission fix script:
    ```bash
-   docker logs $(docker compose ps -q minio)
+   docker exec -it $(docker compose ps -q document-api) chmod -R 755 /app/uploads
    ```
 
-5. **Test Direct Access to MinIO**
+5. **Test Direct Access**
 
-   Test direct access to files through MinIO API:
+   Test direct access to files within the Nginx container:
    ```bash
-   curl -v http://minio.docucol.local/${MINIO_BUCKET}/path/to/file
+   docker exec -it $(docker compose ps -q document-storage) curl http://localhost/index.html
    ```
 
-6. **Test Traefik Routing**
+6. **Verify Routing**
 
-   Test the Traefik routing for the storage path:
+   Test the Traefik routing:
    ```bash
-   curl -v http://localhost/storage/path/to/file
+   curl -H "Host: storage.docucol.local" http://localhost/storage/index.html
    ```
 
-### Permission or Access Denied Errors
+### Permission Denied Errors
+If you see permission denied errors in the Nginx logs:
 
-If you see permission or access denied errors in the logs:
+1. **Check User Contexts**
 
-1. **Check MinIO Credentials**
-
-   Verify the MinIO credentials are correct:
+   Check the user contexts of both containers:
    ```bash
-   docker exec -it $(docker compose ps -q minio) mc config host add local http://localhost:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD}
-   docker exec -it $(docker compose ps -q minio) mc admin info local
+   docker exec -it $(docker compose ps -q document-api) id
+   docker exec -it $(docker compose ps -q document-storage) id
    ```
 
-2. **Check Bucket Policy**
+2. **Apply Consistent Permissions**
 
-   Verify the bucket policy:
+   Ensure all directories have 755 permissions and all files have 644 permissions:
    ```bash
-   docker exec -it $(docker compose ps -q minio) mc policy get local/${MINIO_BUCKET}
-   ```
-
-3. **Set Public Read Policy (if needed)**
-
-   If files should be publicly readable:
-   ```bash
-   docker exec -it $(docker compose ps -q minio) mc policy set download local/${MINIO_BUCKET}
-   ```
-
-4. **Configure CORS**
-
-   If browser requests are failing due to CORS issues:
-   ```bash
-   docker exec -it $(docker compose ps -q minio) mc admin api corsrule add local/${MINIO_BUCKET} <<EOF
-   {
-     "corsRules": [
-       {
-         "allowedOrigins": ["*"],
-         "allowedMethods": ["GET", "HEAD"],
-         "allowedHeaders": ["*"],
-         "exposeHeaders": ["ETag", "Content-Length", "Content-Type"]
-       }
-     ]
-   }
-   EOF
-   ```
-
-### Issues Uploading Files
-
-If there are issues uploading files to MinIO:
-
-1. **Check API Service Logs**
-
-   Check document-api logs for errors:
-   ```bash
-   docker logs $(docker compose ps -q document-api)
-   ```
-
-2. **Verify API Environment Variables**
-
-   Ensure MinIO environment variables are correctly set:
-   ```bash
-   docker exec -it $(docker compose ps -q document-api) env | grep MINIO
-   ```
-
-3. **Test MinIO Connection**
-
-   Test connection from document-api to MinIO:
-   ```bash
-   docker exec -it $(docker compose ps -q document-api) curl -f http://minio:9000/minio/health/live
-   ```
-
-4. **Run the Fix Permissions Script**
-
-   Execute the fix permissions script to reset bucket configuration:
-   ```bash
-   ./scripts/fix-permissions.sh
+   docker exec -it $(docker compose ps -q document-api) find /app/uploads -type d -exec chmod 755 {} \;
+   docker exec -it $(docker compose ps -q document-api) find /app/uploads -type f -exec chmod 644 {} \;
    ```

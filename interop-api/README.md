@@ -31,9 +31,6 @@ Connects to external government APIs to validate users and retrieve official doc
 ### Transfer Module
 Manages document transfers between users and sends notifications through RabbitMQ.
 
-### Messaging Module
-Handles asynchronous communication via RabbitMQ for reliable event-driven processes.
-
 ## Project Structure
 
 ```
@@ -68,11 +65,6 @@ interop-api
 │   │   ├── transfer.service.ts
 │   │   └── dto
 │   │       └── transfer.dto.ts
-│   ├── messaging
-│   │   ├── messaging.module.ts
-│   │   ├── messaging.service.ts
-│   │   └── dto
-│   │       └── message.dto.ts
 │   └── prisma
 │       ├── prisma.module.ts
 │       ├── prisma.service.ts
@@ -112,7 +104,7 @@ DATABASE_URL=postgresql://user:password@localhost:5432/mydb
 JWT_SECRET=your_jwt_secret
 GOV_CARPETA_BASE_URL=https://govcarpeta-apis-4905ff3c005b.herokuapp.com
 RABBITMQ_URL=amqp://localhost:5672
-RABBITMQ_QUEUE=docucol_events
+RABBITMQ_QUEUE=documents_queue
 ```
 
 ## Running the Application
