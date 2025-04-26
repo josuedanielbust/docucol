@@ -4,6 +4,7 @@ import { TransferService } from './transfer.service';
 import { TransferController } from './transfer.controller';
 import { GovApiService } from '../gov-api/gov-api.service';
 import { MessagingService } from '../messaging/messaging.service';
+import { RedisService } from '../redis/redis.service';
 
 @Module({
   imports: [
@@ -13,7 +14,7 @@ import { MessagingService } from '../messaging/messaging.service';
     }),
   ],
   controllers: [TransferController],
-  providers: [TransferService, GovApiService, MessagingService],
+  providers: [TransferService, GovApiService, MessagingService, RedisService],
   exports: [TransferService],
 })
 export class TransferModule {}

@@ -29,14 +29,14 @@ export class TransferService {
   async initiateTransfer(initiateTransferDto: InitiateTransferDto): Promise<TransferResponseDto> {
     try {
       // Validate user is registered with this provider
-      const validateUser = await this.govApiServive.validateUser(initiateTransferDto.userId);
-      if (validateUser.exists === false) {
-        this.logger.error(`Error validating userId - ${initiateTransferDto.userId}`);
-        throw new HttpException(
-          'Not registered with this operator',
-          HttpStatus.UNAUTHORIZED
-        );
-      }
+      // const validateUser = await this.govApiServive.validateUser(initiateTransferDto.userId);
+      // if (validateUser.exists === false) {
+      //   this.logger.error(`Error validating userId - ${initiateTransferDto.userId}`);
+      //   throw new HttpException(
+      //     'Not registered with this operator',
+      //     HttpStatus.UNAUTHORIZED
+      //   );
+      // }
 
       // Send message to RabbitMQ with userId as payload
       this.logger.log(`Sending userId ${initiateTransferDto.userId} to RabbitMQ queue`);

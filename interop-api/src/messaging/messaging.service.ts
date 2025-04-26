@@ -35,7 +35,12 @@ export class MessagingService implements OnModuleInit, OnModuleDestroy {
 
   async publishInitiateTransferEvent(userId: string): Promise<void> {
     try {
-      const event = new InitiateTransferEvent(userId, new Date().toISOString(), 'INITIATE_TRANSFER');
+      const event = new InitiateTransferEvent(
+        userId,
+        new Date().toISOString(),
+        'INITIATE_TRANSFER',
+        'document.transfer.request'
+      );
       const queueName = this.configService.get('RABBITMQ_QUEUE') || 'documents_queue';
       this.channel.sendToQueue(queueName, Buffer.from(JSON.stringify(event)));
     } catch (error) {
@@ -45,7 +50,12 @@ export class MessagingService implements OnModuleInit, OnModuleDestroy {
 
   async publishCompleteTransferEvent(userId: string): Promise<void> {
     try {
-      const event = new CompleteTransferEvent(userId, new Date().toISOString(), 'COMPLETE_TRANSFER');
+      const event = new CompleteTransferEvent(
+        userId,
+        new Date().toISOString(),
+        'COMPLETE_TRANSFER',
+        'document.transfer.confirmation'
+      );
       const queueName = this.configService.get('RABBITMQ_QUEUE') || 'documents_queue';
       this.channel.sendToQueue(queueName, Buffer.from(JSON.stringify(event)));
     } catch (error) {

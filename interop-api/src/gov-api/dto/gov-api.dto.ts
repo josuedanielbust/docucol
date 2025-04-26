@@ -81,3 +81,14 @@ export class RegisterTransferEndpointsResponseDto {
   status?: boolean;
   message?: string;
 }
+
+class Operator {
+  _id!: string;
+  participants!: string[];
+  operatorName!: string;
+  transferAPIURL!: string;
+}
+
+export class GetOperatorsResponseDto {
+  operators!: Operator[];
+}
