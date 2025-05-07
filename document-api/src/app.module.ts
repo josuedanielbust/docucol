@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { DocumentsModule } from './documents/documents.module';
 import { PrismaModule } from './prisma/prisma.module';
-import { MessagingModule } from './messaging/messaging.module';
 import configuration from './config/configuration';
 
 @Module({
@@ -13,7 +12,6 @@ import configuration from './config/configuration';
     }),
     DocumentsModule,
     PrismaModule,
-    MessagingModule,
   ],
 })
 export class AppModule {}

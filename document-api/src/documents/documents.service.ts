@@ -2,7 +2,6 @@ import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateDocumentDto } from './dto/create-document.dto';
 import { DocumentEntity } from './entities/document.entity';
-import { MessagingService } from '../messaging/messaging.service';
 import * as path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { ConfigService } from '@nestjs/config';
@@ -16,7 +15,6 @@ export class DocumentsService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly messagingService: MessagingService,
     private readonly configService: ConfigService,
   ) {
     // Initialize MinIO client
@@ -87,12 +85,6 @@ export class DocumentsService {
           mimeType: file.mimetype,
         },
       });
-
-      // Send notification about the document upload
-      await this.messagingService.publishDocumentUploadedEvent(
-        documentId,
-        document.title
-      );
 
       return document;
     } catch (error) {
