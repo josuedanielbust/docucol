@@ -1,51 +1,61 @@
-# Document API
+# Users API
 
-This project is a NestJS application designed for uploading and retrieving documents. It utilizes Prisma.js for database interactions and RabbitMQ for messaging.
+This project is a NestJS application designed for user management and authentication. It utilizes Prisma.js for database interactions and RabbitMQ for messaging as part of the DocuCol architecture.
 
 ## Features
 
-- Upload documents with metadata.
-- Retrieve a list of uploaded documents.
-- Integration with RabbitMQ for event-driven architecture.
+- User registration and authentication
+- User profile management
+- Role-based access control
+- JWT-based authentication
+- Integration with RabbitMQ for event-driven architecture
 
 ## Technologies Used
 
-- **NestJS**: A progressive Node.js framework for building efficient and scalable server-side applications.
-- **Prisma**: A modern database toolkit that simplifies database access and management.
-- **RabbitMQ**: A message broker that facilitates communication between different parts of the application.
+- **NestJS**: A progressive Node.js framework for building efficient and scalable server-side applications
+- **Prisma**: A modern database toolkit that simplifies database access and management
+- **RabbitMQ**: A message broker that facilitates communication between different parts of the application
+- **Passport & JWT**: Authentication and authorization middleware
+- **bcrypt**: Library for password hashing and verification
 
 ## Project Structure
 
 ```
-document-api
+users-api
 ├── src
 │   ├── app.module.ts
 │   ├── main.ts
 │   ├── config
 │   │   └── configuration.ts
-│   ├── documents
-│   │   ├── documents.controller.ts
-│   │   ├── documents.module.ts
-│   │   ├── documents.service.ts
-│   │   ├── dto
-│   │   │   ├── create-document.dto.ts
-│   │   │   └── update-document.dto.ts
-│   │   └── entities
-│   │       └── document.entity.ts
+│   ├── auth
+│   │   ├── auth.controller.ts
+│   │   ├── auth.module.ts
+│   │   ├── auth.service.ts
+│   │   ├── decorators/
+│   │   ├── dto/
+│   │   └── jwt/
 │   ├── messaging
+│   │   ├── constants.ts
+│   │   ├── decorators
+│   │   │   └── rabbit-subscriber.decorator.ts
+│   │   ├── interfaces
+│   │   │   └── message.interface.ts
+│   │   ├── messaging.explorer.ts
 │   │   ├── messaging.module.ts
-│   │   ├── messaging.service.ts
-│   │   └── events
-│   │       └── document-uploaded.event.ts
-│   └── prisma
-│       ├── prisma.module.ts
-│       ├── prisma.service.ts
-│       └── schema.prisma
+│   │   └── messaging.service.ts
+│   ├── prisma
+│   │   ├── prisma.module.ts
+│   │   ├── prisma.service.ts
+│   │   ├── schema.prisma
+│   │   └── migrations/
+│   ├── transfer/
+│   └── users/
 ├── test
 │   ├── app.e2e-spec.ts
 │   └── jest-e2e.json
 ├── .env
-├── .gitignore
+├── Dockerfile
+├── Makefile
 ├── nest-cli.json
 ├── package.json
 ├── tsconfig.json
@@ -60,7 +70,7 @@ document-api
    ```
 2. Navigate to the project directory:
    ```
-   cd document-api
+   cd users-api
    ```
 3. Install the dependencies:
    ```
@@ -73,9 +83,52 @@ Create a `.env` file in the root directory and add your database connection stri
 
 ## Running the Application
 
-To start the application, run:
+### Using npm
+
+```bash
+# Generate Prisma client and start the application
+npm run start:fresh
+
+# Development mode with hot-reload
+npm run dev
 ```
-npm run start
+
+### Using Make
+
+```bash
+# Generate Prisma client
+make prisma-generate
+
+# Run Prisma migrations
+make prisma-migrate
+
+# Open Prisma Studio
+make prisma-studio
+```
+
+### Using Docker
+
+```bash
+# Build Docker image
+make docker-build
+
+# Run Docker container
+make docker-run
+```
+
+## RabbitMQ Integration
+
+The application uses RabbitMQ for event-driven communication:
+
+- **Publishers**: The `MessagingService` provides methods to publish messages to RabbitMQ.
+- **Subscribers**: Use the `@RabbitSubscriber()` decorator to subscribe to specific message patterns.
+
+Example subscriber:
+```typescript
+@RabbitSubscriber({ pattern: 'user.created' })
+async handleUserCreated(data: UserCreatedEvent) {
+  // Handle the user created event
+}
 ```
 
 ## Testing

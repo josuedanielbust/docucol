@@ -39,8 +39,11 @@ export class TransferService {
       // }
 
       // Send message to RabbitMQ with userId as payload
-      this.logger.log(`Sending userId ${initiateTransferDto.userId} to RabbitMQ queue`);
-      await this.messagingService.publishInitiateTransferEvent(initiateTransferDto.userId);
+      this.logger.log(`Sending userId ${initiateTransferDto.userId} to RabbitMQ queue with pattern`);
+      await this.messagingService.publishInitiateTransferEvent(
+        initiateTransferDto.userId, 
+        'document.transfer.initiate'
+      );
       
       return { userId: initiateTransferDto.userId, message: 'Transfers initiated' }
     } catch (error) {
@@ -63,8 +66,11 @@ export class TransferService {
   async confirmTransfer(confirmTransferDto: ConfirmTransferDto): Promise<TransferResponseDto> {
     try {
       // Send confirmation message to RabbitMQ
-      this.logger.log(`Sending confirmation for userId ${confirmTransferDto.userId} to RabbitMQ queue`);
-      await this.messagingService.publishCompleteTransferEvent(confirmTransferDto.userId);
+      this.logger.log(`Sending confirmation for userId ${confirmTransferDto.userId} to RabbitMQ queue with pattern`);
+      await this.messagingService.publishCompleteTransferEvent(
+        confirmTransferDto.userId,
+        'document.transfer.complete'
+      );
       
       return { userId: confirmTransferDto.userId, message: 'Transfer completed' };
     } catch (error) {
