@@ -59,6 +59,8 @@ const NavigationBar = () => {
               <>
                 <Nav.Link as={Link} to="/signin">Iniciar Sesión</Nav.Link>
                 <Nav.Link as={Link} to="/signup">Registrarse</Nav.Link>
+                <Nav.Link as={Link} to="/operadores">Operadores</Nav.Link>
+                <Nav.Link as={Link} to="/transferencia">Transferencia</Nav.Link>
               </>
             )}
           </Nav>
