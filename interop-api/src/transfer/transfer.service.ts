@@ -1,22 +1,17 @@
 import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
-import { HttpService } from '@nestjs/axios';
-import { ConfigService } from '@nestjs/config';
-import { MessagingService } from '../messaging/messaging.service';
+import { MessagingService } from 'src/messaging/messaging.service';
+import { GovApiService } from 'src/gov-api/gov-api.service'
 import { 
   InitiateTransferDto,
   ConfirmTransferDto,
   TransferResponseDto
 } from './dto/transfer.dto';
 
-import { GovApiService } from '../gov-api/gov-api.service'
-
 @Injectable()
 export class TransferService {
   private readonly logger = new Logger(TransferService.name);
 
   constructor(
-    private readonly httpService: HttpService,
-    private readonly configService: ConfigService,
     private readonly govApiServive: GovApiService,
     private readonly messagingService: MessagingService
   ) { }
@@ -40,9 +35,16 @@ export class TransferService {
 
       // Send message to RabbitMQ with userId as payload
       this.logger.log(`Sending userId ${initiateTransferDto.userId} to RabbitMQ queue with pattern`);
-      await this.messagingService.publishInitiateTransferEvent(
-        initiateTransferDto.userId, 
-        'document.transfer.initiate'
+      const eventPayload = {
+        message: 'initiating transfer',
+        transferId: `transfer-${Date.now()}`,
+        userId: initiateTransferDto.userId,
+        status: 'pending_user',
+      };
+
+      await this.messagingService.publish(
+        'document.transfer.initiate', 
+        eventPayload
       );
       
       return { userId: initiateTransferDto.userId, message: 'Transfers initiated' }
@@ -67,9 +69,15 @@ export class TransferService {
     try {
       // Send confirmation message to RabbitMQ
       this.logger.log(`Sending confirmation for userId ${confirmTransferDto.userId} to RabbitMQ queue with pattern`);
-      await this.messagingService.publishCompleteTransferEvent(
-        confirmTransferDto.userId,
-        'document.transfer.complete'
+      const eventPayload = {
+        message: 'confirming transfer',
+        userId: confirmTransferDto.userId,
+        status: 'pending_user',
+      };
+
+      await this.messagingService.publish(
+        'document.transfer.complete', 
+        eventPayload
       );
       
       return { userId: confirmTransferDto.userId, message: 'Transfer completed' };

@@ -1,10 +1,12 @@
 import { Module } from '@nestjs/common';
-import { HttpModule } from '@nestjs/axios';
-import { TransferService } from './transfer.service';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 import { TransferController } from './transfer.controller';
-import { GovApiService } from '../gov-api/gov-api.service';
+import { ConfigService, ConfigModule } from '@nestjs/config';
 import { MessagingService } from '../messaging/messaging.service';
-import { RedisService } from '../redis/redis.service';
+import { GovApiService } from 'src/gov-api/gov-api.service';
+import { RedisService } from 'src/redis/redis.service';
+import { TransferService } from './transfer.service';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
   imports: [
@@ -12,9 +14,34 @@ import { RedisService } from '../redis/redis.service';
       timeout: 30000,
       maxRedirects: 5,
     }),
+    ConfigModule,
+    ClientsModule.registerAsync([
+      {
+        name: 'RABBITMQ_SERVICE',
+        inject: [ConfigService],
+        useFactory: (configService: ConfigService) => ({
+          transport: Transport.RMQ,
+          options: {
+            urls: [configService.get<string>('rabbitmq.url', 'amqp://localhost:5672')],
+            queue: `${configService.get<string>('rabbitmq.queue', 'docucol_events')}`,
+            queueOptions: {
+              durable: true,
+            },
+          },
+        }),
+      },
+    ]),
+  ],
+  providers: [
+    TransferService,
+    GovApiService,
+    MessagingService,
+    ConfigService,
+    RedisService,
+  ],
+  exports: [
+    TransferService,
   ],
   controllers: [TransferController],
-  providers: [TransferService, GovApiService, MessagingService, RedisService],
-  exports: [TransferService],
 })
 export class TransferModule {}
