@@ -1,13 +1,23 @@
 import axios from 'axios';
 
-const API_BASE = 'https://govcarpeta-apis-4905ff3c005b.herokuapp.com';
-
-export const getOperadorPorCorreo = async (correo) => {
+// Función para obtener un operador por correo
+export const getOperadorPorCorreo = async (email) => {
   try {
-    const response = await axios.get(`${API_BASE}/centralizador/operador/${correo}`);
-    return response.data.operador;
+    const response = await axios.get('http://localhost:3000/gov-api/operators?email=${email}');
+    return response.data;
   } catch (error) {
-    console.error("Error al consultar operador:", error);
-    return null;
+    console.error('Error al obtener el operador por correo:', error);
+    throw error;
+  }
+};
+
+// Función para obtener todos los operadores
+export const getOperadores = async () => {
+  try {
+    const response = await axios.get('http://localhost:3000/gov-api/operators');
+    return response.data;
+  } catch (error) {
+    console.error('Error al obtener los operadores:', error);
+    throw error;
   }
 };
