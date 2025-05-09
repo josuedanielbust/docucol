@@ -21,6 +21,12 @@
      - Gestión de usuarios
      - Gestión de documentos
      - Transferencia de documentos
+     - Interacción con la base de datos
+     - Manejo de errores y excepciones
+     - Validación de datos
+     - Autenticación y autorización
+     - Registro y monitoreo
+     
 
 5. **Base de Datos** 
    - **Descripción**: La base de datos almacena toda la información del sistema, incluyendo usuarios, documentos y registros de transferencia.
@@ -38,6 +44,7 @@
      - Almacenamiento y recuperación de archivos
      - Gestión de permisos de acceso
      - Optimización del rendimiento de entrega de archivos
+     
 
 ```mermaid
 graph TD
