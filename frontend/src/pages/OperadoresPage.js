@@ -1,14 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Table, Container, Form, Button } from 'react-bootstrap';
-import TransferPage from './TransferPage';
+import { initiateTransfer } from '../services/TransferService'; // Importar la función de la API
 
 const OperadoresPage = () => {
   const [operadores, setOperadores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [message, setMessage] = useState('');
-  const [currentPage, setCurrentPage] = useState('operadores'); // Controla la página actual
-  const [selectedOperadorId, setSelectedOperadorId] = useState(null); // ID del operador seleccionado
 
   useEffect(() => {
     // Cargar datos de ejemplo directamente
@@ -23,14 +21,24 @@ const OperadoresPage = () => {
     fetchOperadores();
   }, []);
 
-  const handleTransfer = (operadorId) => {
-    setSelectedOperadorId(operadorId); // Guarda el operador seleccionado
-    setCurrentPage('transfer'); // Cambia a la página de transferencia
-  };
+  const processTransfer = async (operadorId) => {
+    try {
+     const confirm = window.confirm(`¿Estás seguro de que deseas transferir al operador con ID ${operadorId}?`);
+        if (!confirm) {
+          return; // Si el usuario cancela, no se realiza la transferencia
+        }
 
-  if (currentPage === 'transfer') {
-    return <TransferPage operadorId={selectedOperadorId} />;
-  }
+      const userId = 123; // Aquí puedes obtener el userId dinámicamente si es necesario
+      const payload = { userId, operadorId, includeDocuments: true };
+      await initiateTransfer(payload); // Llamada a la API
+      setMessage(`Transferencia iniciada con éxito al operador ${operadorId}.`);
+      setTimeout(() => {setMessage(''); }, 3000);
+    } catch (error) {
+      setMessage('Error al clinician la transferencia.');
+      setTimeout(() => {setMessage(''); }, 3000);
+
+    }
+  };
 
   return (
     <div style={{ backgroundColor: '#f0f2f5', minHeight: '100vh', padding: '20px' }}>
@@ -72,7 +80,7 @@ const OperadoresPage = () => {
                 <td>
                   <Button
                     variant="success"
-                    onClick={() => handleTransfer(operador.id)}>
+                    onClick={() => processTransfer(operador.id)}>
                     Transferencia
                   </Button>
                 </td>
