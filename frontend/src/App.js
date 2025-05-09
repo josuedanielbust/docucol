@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import './App.css';
 
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
@@ -12,10 +12,7 @@ import EditProfilePage from './pages/EditProfilePage';
 import OperadoresPage from './pages/OperadoresPage';
 import TransferPage from './pages/TransferPage';
 
-
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false); // Simula el estado de autenticación
-
   return (
     <Router>
       <NavigationBar />

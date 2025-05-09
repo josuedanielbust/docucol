@@ -4,6 +4,7 @@ import { initiateTransfer, confirmTransfer } from '../services/TransferService';
 
 const TransferPage = () => {
   const [userId, setUserId] = useState('');
+  const [operadorId, setOperadorId] = useState(''); // Nuevo estado para el ID del operador
   const [transferId, setTransferId] = useState('');
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState(''); // 'success' o 'error'
@@ -20,13 +21,13 @@ const TransferPage = () => {
 
   const handleInitiateTransfer = async () => {
     try {
-      if (!userId) {
-        showMessage('Por favor, ingresa un ID de usuario.', 'error');
+      if (!userId || !operadorId) {
+        showMessage('Por favor, ingresa el ID de usuario y el ID del operador.', 'error');
         return;
       }
 
-      // Transferir usuario con todos sus documentos
-      const payload = { userId, includeDocuments: true };
+      // Transferir usuario con todos sus documentos al operador
+      const payload = { userId, operadorId, includeDocuments: true };
       const response = await initiateTransfer(payload);
       setTransferId(response.transferId); // Almacena el ID de Transferencia generado
       showMessage('Transferencia iniciada con éxito.', 'success');
@@ -73,6 +74,16 @@ const TransferPage = () => {
             value={userId}
             onChange={(e) => setUserId(e.target.value)}
             placeholder="Ingresa el ID del usuario"
+            style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
+          />
+        </div>
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ display: 'block', marginBottom: '5px' }}>ID del Operador:</label>
+          <input
+            type="text"
+            value={operadorId}
+            onChange={(e) => setOperadorId(e.target.value)}
+            placeholder="Ingresa el ID del operador"
             style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
           />
         </div>
