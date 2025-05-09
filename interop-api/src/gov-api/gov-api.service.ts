@@ -197,7 +197,7 @@ export class GovApiService {
       // Store the result in Redis
       await this.cacheOperators(operators.operators);
       
-      return operators.operators;
+      return { operators: operators.operators };
     } catch (error) {
       this.logger.error(`Error retrieving operators: ${(error as Error).message}`);
       throw new HttpException(
