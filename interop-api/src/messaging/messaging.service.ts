@@ -1,55 +1,32 @@
-import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { InitiateTransferEvent, CompleteTransferEvent } from './events/transfer.event';
-import { ConfigService } from '@nestjs/config';
-import * as amqplib from 'amqplib';
-import { Channel, ChannelModel } from 'amqplib';
+import { Injectable, Inject, Logger } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
+import { lastValueFrom } from 'rxjs';
+import { RABBIT_PROVIDER, RABBIT_EXCHANGE } from './constants';
 
 @Injectable()
-export class MessagingService implements OnModuleInit, OnModuleDestroy {
+export class MessagingService {
+  private readonly logger = new Logger(MessagingService.name);
+
   constructor(
-    private readonly configService: ConfigService,
+    @Inject(RABBIT_PROVIDER) private readonly client: ClientProxy,
   ) {}
 
-  private connection!: ChannelModel;
-  private channel!: Channel;
-
-  async onModuleInit() {
+  async publish<T = any>(pattern: string, data: T): Promise<void> {
     try {
-      this.connection = await amqplib.connect(this.configService.get('RABBITMQ_URL') || 'amqp://localhost');
-      this.channel = await this.connection.createChannel();
-      const queueName = this.configService.get('RABBITMQ_QUEUE') || 'documents_queue';
-      await this.channel.assertQueue(queueName);
+      this.logger.log(`Publishing message to ${pattern}`);
+      await lastValueFrom(this.client.emit<any>(pattern, data));
+      this.logger.log(`Message published to ${pattern}`);
     } catch (error) {
-      console.error('RabbitMQ connection failed:', error);
+      this.logger.error(`Failed to publish message to ${pattern}`, error);
+      throw error;
     }
   }
 
-  async onModuleDestroy() {
-    try {
-      if (this.channel) await this.channel.close();
-      if (this.connection) await this.connection.close();
-    } catch (error) {
-      console.error('Error closing RabbitMQ connections:', error);
-    }
+  async publishToExchange<T = any>(routingKey: string, data: T): Promise<void> {
+    return this.publish(`${RABBIT_EXCHANGE}.${routingKey}`, data);
   }
 
-  async publishInitiateTransferEvent(userId: string): Promise<void> {
-    try {
-      const event = new InitiateTransferEvent(userId, new Date().toISOString(), 'INITIATE_TRANSFER');
-      const queueName = this.configService.get('RABBITMQ_QUEUE') || 'documents_queue';
-      this.channel.sendToQueue(queueName, Buffer.from(JSON.stringify(event)));
-    } catch (error) {
-      console.error('Error publishing event:', error);
-    }
-  }
-
-  async publishCompleteTransferEvent(userId: string): Promise<void> {
-    try {
-      const event = new CompleteTransferEvent(userId, new Date().toISOString(), 'COMPLETE_TRANSFER');
-      const queueName = this.configService.get('RABBITMQ_QUEUE') || 'documents_queue';
-      this.channel.sendToQueue(queueName, Buffer.from(JSON.stringify(event)));
-    } catch (error) {
-      console.error('Error publishing event:', error);
-    }
+  getClient(): ClientProxy {
+    return this.client;
   }
 }

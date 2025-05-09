@@ -1,13 +1,13 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { DocumentsService } from './documents.service';
 import { DocumentsController } from './documents.controller';
 import { PrismaModule } from '../prisma/prisma.module';
-import { MessagingModule } from '../messaging/messaging.module'; // Add this import
+import { MessagingModule } from '../messaging/messaging.module';
 
 @Module({
   imports: [
     PrismaModule,
-    MessagingModule, // Add this line
+    forwardRef(() => MessagingModule),
   ],
   controllers: [DocumentsController],
   providers: [DocumentsService],
