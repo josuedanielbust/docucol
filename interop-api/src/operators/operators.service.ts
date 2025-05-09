@@ -51,7 +51,7 @@ export class OperatorsService {
 
       return await lastValueFrom(response);
     } catch (error) {
-      this.logger.error(`Error in validateUser: ${(error as Error).message}`);
+      this.logger.error(`Error in sendTransferRequest: ${(error as Error).message}`);
       throw new HttpException(
         'Failed to send transfer request',
         HttpStatus.INTERNAL_SERVER_ERROR
