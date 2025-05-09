@@ -188,23 +188,14 @@ graph TD
 
 ```mermaid
 graph TD
-    subgraph Cliente
-        Browser[Cliente: Navegador Web]
-    end
+    A[Inicio: Página de Registro] --> B[Usuario ingresa datos de registro]
+    B -->|Datos válidos| C[Enviar datos al API de Registro]
+    B -->|Datos inválidos| D[Mostrar mensaje de error]
 
-    subgraph Servidor
-        Frontend[Servidor Frontend: React + Nginx + Docker]
-        Backend[Servidor Backend: Node.js en Docker]
-        API[API Gateway: Traefik]
-    end
+    C -->|Éxito| E[Redirigir a la página de Inicio de Sesión]
+    C -->|Error| F[Mostrar mensaje de error del servidor]
 
-    subgraph BaseDeDatos
-        DB[Base de Datos: PostgreSQL en Docker]
-    end
-
-    Browser -->|HTTP/HTTPS + JSON| Frontend
-    Frontend -->|HTTP/HTTPS + JSON| API
-    API -->|HTTP/HTTPS + JSON| Backend
-    Backend -->|SQL| DB
+    E --> G[Fin: Usuario registrado y redirigido]
+    F --> G
 ```
 

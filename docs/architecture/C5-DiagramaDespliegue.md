@@ -55,8 +55,8 @@ graph TD
         DB[Base de Datos: PostgreSQL en Docker]
     end
 
-    Browser -->|HTTP/HTTPS| Frontend
-    Frontend -->|HTTP/HTTPS| API
-    API -->|HTTP/HTTPS| Backend
+    Browser -->|HTTP/HTTPS + JSON| Frontend
+    Frontend -->|HTTP/HTTPS + JSON| API
+    API -->|HTTP/HTTPS + JSON| Backend
     Backend -->|SQL| DB
 ```
