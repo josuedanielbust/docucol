@@ -1,15 +1,12 @@
-import { Module, DynamicModule, Provider } from '@nestjs/common';
+import { Module, DynamicModule, forwardRef } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { MessagingService } from './messaging.service';
 import { RABBIT_PROVIDER } from './constants';
-import { DiscoveryModule } from '@nestjs/core';
-import { MessagingExplorer } from './messaging.explorer';
 
 @Module({
   imports: [
     ConfigModule,
-    DiscoveryModule,
     ClientsModule.registerAsync([
       {
         name: RABBIT_PROVIDER,
@@ -19,7 +16,7 @@ import { MessagingExplorer } from './messaging.explorer';
           options: {
             urls: [configService.get<string>('rabbitmq.url') || 
                   `amqp://${configService.get<string>('rabbitmq.username')}:${configService.get<string>('rabbitmq.password')}@${configService.get<string>('rabbitmq.host')}:${configService.get<number>('rabbitmq.port')}`],
-            queue: `${configService.get<string>('rabbitmq.queue')}_interop`,
+            queue: `${configService.get<string>('rabbitmq.queue')}_transfers`,
             queueOptions: {
               durable: true,
             },
@@ -29,7 +26,7 @@ import { MessagingExplorer } from './messaging.explorer';
       },
     ]),
   ],
-  providers: [MessagingService, MessagingExplorer],
+  providers: [MessagingService],
   exports: [MessagingService],
 })
 export class MessagingModule {

@@ -23,7 +23,7 @@ async function bootstrap() {
     transport: Transport.RMQ,
     options: {
       urls: [rabbitMqUrl],
-      queue: `${configService.get<string>('rabbitmq.queue')}_documents`,
+      queue: `${configService.get<string>('rabbitmq.queue')}_notifications`,
       queueOptions: {
         durable: true,
       },
@@ -38,7 +38,4 @@ async function bootstrap() {
   await app.listen(port);
   logger.log(`HTTP server running on port ${port}`);
 }
-
-bootstrap().catch(err => {
-  console.error('Failed to start application', err);
-});
+bootstrap();

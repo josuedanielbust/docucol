@@ -6,6 +6,7 @@ import { GovApiModule } from './gov-api/gov-api.module';
 import { TransferModule } from './transfer/transfer.module';
 import { MessagingModule } from './messaging/messaging.module';
 import configuration from './config/configuration';
+import { OperatorsModule } from './operators/operators.module';
 
 @Module({
   imports: [
@@ -17,7 +18,8 @@ import configuration from './config/configuration';
     RedisModule,
     GovApiModule,
     TransferModule,
-    MessagingModule
+    MessagingModule,
+    OperatorsModule
   ],
   controllers: [],
   providers: [],

@@ -165,14 +165,16 @@ export class GovApiService {
    * Register the list of operators on the government API
    * @returns list of available operators from the government API
    */
-  async getOperators(): Promise<GetOperatorsResponseDto> {
+  async getOperators(useCache: boolean = true): Promise<GetOperatorsResponseDto> {
     try {
-      // Try to get operators from Redis cache first
-      const cachedOperators = await this.redisService.get(this.OPERATORS_CACHE_KEY);
-      
-      if (cachedOperators) {
-        this.logger.log('Retrieved operators from cache');
-        return { operators: JSON.parse(cachedOperators) };
+      if (useCache) {
+        // Try to get operators from Redis cache first
+        const cachedOperators = await this.redisService.get(this.OPERATORS_CACHE_KEY);
+        
+        if (cachedOperators) {
+          this.logger.log('Retrieved operators from cache');
+          return { operators: JSON.parse(cachedOperators) };
+        }
       }
       
       // If not in cache, fetch from government API
@@ -202,6 +204,49 @@ export class GovApiService {
       this.logger.error(`Error retrieving operators: ${(error as Error).message}`);
       throw new HttpException(
         'Failed to retrieve operators from government system',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  /**
+   * Get operator by ID from the government API with caching
+   * @param operatorId The ID of the operator to retrieve
+   * @returns Operator data or null if not found
+   */
+  async getOperatorById(operatorId: string): Promise<any> {
+    try {
+      const OPERATOR_CACHE_KEY = `gov:operator:${operatorId}`;
+      
+      // Try to get from Redis cache first
+      const cachedOperator = await this.redisService.get(OPERATOR_CACHE_KEY);
+      if (cachedOperator) {
+        this.logger.log(`Retrieved operator ${operatorId} from cache`);
+        return JSON.parse(cachedOperator);
+      }
+      
+      // If not in cache, get all operators and find the specific one
+      this.logger.log(`Operator ${operatorId} not found in cache, fetching from API`);
+      const { operators } = await this.getOperators(false);
+      
+      const operator = operators.find(op => op._id === operatorId);
+      if (!operator) {
+        this.logger.warn(`Operator with ID ${operatorId} not found`);
+        return null;
+      }
+      
+      // Cache the individual operator
+      await this.redisService.set(
+        OPERATOR_CACHE_KEY,
+        JSON.stringify(operator),
+        this.OPERATORS_CACHE_TTL
+      );
+      
+      return operator;
+    } catch (error) {
+      this.logger.error(`Error retrieving operator ${operatorId}: ${(error as Error).message}`);
+      throw new HttpException(
+        `Failed to retrieve operator with ID ${operatorId}`,
         HttpStatus.INTERNAL_SERVER_ERROR
       );
     }

@@ -39,6 +39,7 @@ export class TransferService {
         message: 'initiating transfer',
         transferId: `transfer-${Date.now()}`,
         userId: initiateTransferDto.userId,
+        operatorId: initiateTransferDto.operatorId,
         status: 'pending_user',
       };
 

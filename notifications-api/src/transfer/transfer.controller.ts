@@ -1,17 +1,17 @@
-import { Controller, Logger, Inject } from '@nestjs/common';
-import { MessagePattern, Payload, Ctx, RmqContext, Transport, ClientProxy } from '@nestjs/microservices';
-import { User } from '@prisma/client';
-import { UsersService } from 'src/users/users.service';
+import { Controller, Logger } from '@nestjs/common';
+import { MessagePattern, Payload, Ctx, RmqContext, Transport } from '@nestjs/microservices';
+import { EmailService } from 'src/email/email.service';
+import { MessagingService } from 'src/messaging/messaging.service';
 
 /**
  * Interface representing transfer data
  */
-interface UserTransferData {
-  userId: string;
-  operatorId: string;
-  transferId: string;
+interface DocumentTransferData {
+  success: boolean;
   message: string;
+  transferId: string;
   status: string;
+  user: Record<string, string | number | boolean>;
 }
 
 /**
@@ -22,8 +22,8 @@ export class TransferController {
   private readonly logger = new Logger(TransferController.name);
 
   constructor(
-    private readonly usersService: UsersService,
-    @Inject('TRANSFER_SERVICE') private readonly documentsTransferClient: ClientProxy
+    private readonly emailService: EmailService,
+    private readonly messagingService: MessagingService
   ) {}
 
   /**
@@ -33,13 +33,14 @@ export class TransferController {
    * @param context The RabbitMQ context for message handling
    * @returns Transfer acknowledgment with status
    */
-  @MessagePattern('document.transfer.initiate', Transport.RMQ)
+  @MessagePattern('document.transfer.user.response', Transport.RMQ)
   async handleTransferInitiate(
-    @Payload() data: UserTransferData,
+    @Payload() data: DocumentTransferData,
     @Ctx() context: RmqContext
   ) {
+    // const eventMessage = JSON.parse(context.getMessage().content.toString());
     this.logger.log(`transfer initiation received: ${JSON.stringify(data)}`);
-
+    
     try {
       const transferResult = await this.processTransfer(data);
       
@@ -51,15 +52,15 @@ export class TransferController {
       const eventPayload = {
         success: true,
         message: 'user data for transfer successfully obtained',
+        user: data.user,
         transferId: data.transferId,
-        operatorId: data.operatorId,
         status: transferResult.status,
-        user: transferResult.user
+        documents: transferResult.documents,
       };
 
       // Publish the response to a queue for further processing
-      await this.publishTransferResponse('document.transfer.user.response', eventPayload);
-      this.logger.log(`Published transfer response for user ${transferResult.user.id}`);
+      await this.publishTransferResponse('document.transfer.documents.response', eventPayload);
+      this.logger.log(`Published transfer response for user ${eventPayload.user.id}`);
 
       return eventPayload;
     } catch (error) {
@@ -74,7 +75,6 @@ export class TransferController {
       const errorPayload = {
         success: false,
         message: `Failed to initiate transfer: ${(error as Error).message}`,
-        transferId: data.transferId,
       };
       
       // Publish error message to error queue
@@ -87,19 +87,21 @@ export class TransferController {
   /**
    * Processes the transfer (mock implementation)
    */
-  private async processTransfer(data: UserTransferData): Promise<{ status: string, user: Omit<User, 'password'> }> {
-    const userDetails = await this.usersService.findOne(data.userId);
-
-    if (!userDetails) {
-      throw new Error(`User with ID ${data.userId} not found`);
-    }
-
-    // Create a sanitized user object without the password
-    const { password, ...sanitizedUser } = userDetails;
-
+  private async processTransfer(data: DocumentTransferData): Promise<{
+    status: string,
+    documents: { id: string, title: string, presignedUrl: string }[]
+  }> {
+    const documentsList = await this.emailService.sendTemplateEmail(
+      '',
+      String(data.user.email),
+      {
+        name: data.user.name,
+        appName: 'Docucol'
+      }
+    );
     return {
-      status: 'pending_documents',
-      user: sanitizedUser,
+      status: 'pending_confirmation',
+      documents: documentsList,
     };
   }
   
@@ -111,8 +113,7 @@ export class TransferController {
    */
   private async publishTransferResponse(pattern: string, payload: any): Promise<void> {
     try {
-      this.documentsTransferClient.emit(pattern, payload);
-      this.logger.log(`Message published to ${pattern}`);
+      await this.messagingService.publish(pattern, payload);
     } catch (error) {
       this.logger.error(`Failed to publish message to ${pattern}: ${(error as Error).message}`);
       // Not throwing here to avoid disrupting the main flow if publishing fails

@@ -4,6 +4,7 @@ import { TransferController } from './transfer.controller';
 import { ConfigService, ConfigModule } from '@nestjs/config';
 import { GovApiService } from 'src/gov-api/gov-api.service';
 import { RedisService } from 'src/redis/redis.service';
+import { OperatorsService } from 'src/operators/operators.service';
 import { TransferService } from './transfer.service';
 import { HttpModule } from '@nestjs/axios';
 
@@ -36,6 +37,7 @@ import { HttpModule } from '@nestjs/axios';
     GovApiService,
     ConfigService,
     RedisService,
+    OperatorsService
   ],
   exports: [
     TransferService,

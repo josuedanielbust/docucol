@@ -1,8 +1,8 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
-import { Logger } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -13,9 +13,31 @@ async function bootstrap() {
   
   // Get config service
   const configService = app.get(ConfigService);
-  const port = configService.get<number>('app.port') || 3000;
   
+  // Connect to RabbitMQ for microservices
+  const rabbitMqUrl = configService.get<string>('rabbitmq.url') || 
+    `amqp://${configService.get<string>('rabbitmq.username')}:${configService.get<string>('rabbitmq.password')}@${configService.get<string>('rabbitmq.host')}:${configService.get<number>('rabbitmq.port')}`;
+  
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.RMQ,
+    options: {
+      urls: [rabbitMqUrl],
+      queue: `${configService.get<string>('rabbitmq.queue')}_interop`,
+      queueOptions: {
+        durable: true,
+      },
+      noAck: false,
+    },
+  });
+
+  await app.startAllMicroservices();
+  logger.log('Microservices started');
+
+  const port = configService.get<number>('app.port') || 3000;
   await app.listen(port);
-  logger.log(`Application is running on: ${await app.getUrl()}`);
+  logger.log(`HTTP server running on port ${port}`);
 }
-bootstrap();
+
+bootstrap().catch(err => {
+  console.error('Failed to start application', err);
+});
