@@ -8,6 +8,7 @@ import { UsersService } from 'src/users/users.service';
  */
 interface UserTransferData {
   userId: string;
+  operatorId: string;
   transferId: string;
   message: string;
   status: string;
@@ -51,6 +52,7 @@ export class TransferController {
         success: true,
         message: 'user data for transfer successfully obtained',
         transferId: data.transferId,
+        operatorId: data.operatorId,
         status: transferResult.status,
         user: transferResult.user
       };

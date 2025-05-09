@@ -10,6 +10,7 @@ interface DocumentTransferData {
   success: boolean;
   message: string;
   transferId: string;
+  operatorId: string;
   status: string;
   user: Record<string, string | number | boolean>;
 }
@@ -54,6 +55,7 @@ export class TransferController {
         message: 'user data for transfer successfully obtained',
         user: data.user,
         transferId: data.transferId,
+        operatorId: data.operatorId,
         status: transferResult.status,
         documents: transferResult.documents,
       };

@@ -38,4 +38,7 @@ async function bootstrap() {
   await app.listen(port);
   logger.log(`HTTP server running on port ${port}`);
 }
-bootstrap();
+
+bootstrap().catch(err => {
+  console.error('Failed to start application', err);
+});
