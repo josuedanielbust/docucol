@@ -1,28 +1,40 @@
 import React, { useState } from 'react';
 import { initiateTransfer, confirmTransfer } from '../services/TransferService';
 
-const TransferComponent = () => {
+const TransferPage = () => {
   const [userId, setUserId] = useState('');
   const [documentId, setDocumentId] = useState('');
   const [transferId, setTransferId] = useState('');
   const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState(''); // 'success' o 'error'
+  const [activeSection, setActiveSection] = useState('document'); // 'document' o 'user'
+
+  const showMessage = (text, type) => {
+    setMessage(text);
+    setMessageType(type);
+    setTimeout(() => {
+      setMessage('');
+      setMessageType('');
+    }, 3000);
+  };
 
   const handleInitiateTransfer = async () => {
     try {
-      const response = await initiateTransfer({ userId, documentId });
+      const payload = activeSection === 'document' ? { documentId } : { userId };
+      const response = await initiateTransfer(payload);
       setTransferId(response.transferId);
-      setMessage('Transferencia iniciada con éxito.');
+      showMessage(`Transferencia de ${activeSection} iniciada con éxito.`, 'success');
     } catch (error) {
-      setMessage('Error al iniciar la transferencia.');
+      showMessage(`Error al iniciar la transferencia de ${activeSection}.`, 'error');
     }
   };
 
   const handleConfirmTransfer = async () => {
     try {
-      const response = await confirmTransfer({ userId, transferId });
-      setMessage('Transferencia confirmada con éxito.');
+      await confirmTransfer({ transferId });
+      showMessage(`Transferencia de ${activeSection} confirmada con éxito.`, 'success');
     } catch (error) {
-      setMessage('Error al confirmar la transferencia.');
+      showMessage(`Error al confirmar la transferencia de ${activeSection}.`, 'error');
     }
   };
 
@@ -34,8 +46,7 @@ const TransferComponent = () => {
         alignItems: 'center',
         height: '100vh',
         backgroundColor: '#f0f2f5',
-      }}
-    >
+      }}>
       <div
         style={{
           maxWidth: '400px',
@@ -45,74 +56,113 @@ const TransferComponent = () => {
           borderRadius: '8px',
           backgroundColor: '#fff',
           boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-        }}
-      >
-        <h2 style={{ textAlign: 'center', color: '#333' }}>Transferencia de Documentos</h2>
-        <div>
-          <div style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '5px' }}>ID de Usuario:</label>
-            <input
-              type="text"
-              value={userId}
-              onChange={(e) => setUserId(e.target.value)}
-              placeholder="Ingresa el ID de usuario"
-              style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-            />
-          </div>
-          <div style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '5px' }}>ID de Documento:</label>
-            <input
-              type="text"
-              value={documentId}
-              onChange={(e) => setDocumentId(e.target.value)}
-              placeholder="Ingresa el ID del documento"
-              style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-            />
-          </div>
+        }}>
+        <h2 className="text-center mb-4" style={{ color: '#007bff' }}>Transferencia</h2>
+        <div style={{ marginBottom: '20px', textAlign: 'center' }}>
           <button
-            onClick={handleInitiateTransfer}
+            onClick={() => setActiveSection('document')}
             style={{
-              width: '100%',
+              marginRight: '10px',
               padding: '10px',
-              backgroundColor: '#007bff',
+              backgroundColor: activeSection === 'document' ? '#007bff' : '#ccc',
               color: 'white',
               border: 'none',
               borderRadius: '4px',
               cursor: 'pointer',
-              marginBottom: '15px',
-            }}
-          >
-            Iniciar Transferencia
+            }}>
+            Documentos
           </button>
-          <div style={{ marginBottom: '15px' }}>
-            <label style={{ display: 'block', marginBottom: '5px' }}>ID de Transferencia:</label>
-            <input
-              type="text"
-              value={transferId}
-              onChange={(e) => setTransferId(e.target.value)}
-              placeholder="Ingresa el ID de transferencia"
-              style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
-            />
-          </div>
           <button
-            onClick={handleConfirmTransfer}
+            onClick={() => setActiveSection('user')}
             style={{
-              width: '100%',
               padding: '10px',
-              backgroundColor: '#6c757d',
+              backgroundColor: activeSection === 'user' ? '#007bff' : '#ccc',
               color: 'white',
               border: 'none',
               borderRadius: '4px',
               cursor: 'pointer',
-            }}
-          >
-            Confirmar Transferencia
+            }} >
+            Usuarios
           </button>
         </div>
-        {message && <p style={{ marginTop: '20px', textAlign: 'center', color: '#28a745' }}>{message}</p>}
+        {activeSection === 'document' && (
+          <div>
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '5px' }}>ID de Documento:</label>
+              <input
+                type="text"
+                value={documentId}
+                onChange={(e) => setDocumentId(e.target.value)}
+                placeholder="Ingresa el ID del documento"
+                style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
+              />
+            </div>
+          </div>
+        )}
+        {activeSection === 'user' && (
+          <div>
+            <div style={{ marginBottom: '15px' }}>
+              <label style={{ display: 'block', marginBottom: '5px' }}>ID de Usuario:</label>
+              <input
+                type="text"
+                value={userId}
+                onChange={(e) => setUserId(e.target.value)}
+                placeholder="Ingresa el ID del usuario"
+                style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
+              />
+            </div>
+          </div>
+        )}
+        <button
+          onClick={handleInitiateTransfer}
+          style={{
+            width: '100%',
+            padding: '10px',
+            backgroundColor: '#007bff',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            marginBottom: '15px',
+          }}>
+          Iniciar Transferencia
+        </button>
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ display: 'block', marginBottom: '5px' }}>ID de Transferencia:</label>
+          <input
+            type="text"
+            value={transferId}
+            onChange={(e) => setTransferId(e.target.value)}
+            placeholder="Ingresa el ID de transferencia"
+            style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
+          />
+        </div>
+        <button
+          onClick={handleConfirmTransfer}
+          style={{
+            width: '100%',
+            padding: '10px',
+            backgroundColor: '#6c757d',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+          }}>
+          Confirmar Transferencia
+        </button>
+        {message && (
+          <p
+            style={{
+              marginTop: '20px',
+              textAlign: 'center',
+              color: messageType === 'success' ? '#28a745' : '#dc3545',
+            }}>
+            {message}
+          </p>
+        )}
       </div>
     </div>
   );
 };
 
-export default TransferComponent;
+export default TransferPage;
