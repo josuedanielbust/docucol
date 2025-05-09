@@ -16,7 +16,7 @@ export default () => ({
     port: parseInt(process.env.RABBITMQ_PORT || '5672', 10),
     username: process.env.RABBITMQ_USER || 'user',
     password: process.env.RABBITMQ_PASSWORD || 'password',
-    queue: process.env.RABBITMQ_QUEUE || 'document_uploads',
+    queue: process.env.RABBITMQ_QUEUE || 'docucol_events',
   },
   app: {
     port: parseInt(process.env.PORT || '3000', 10),

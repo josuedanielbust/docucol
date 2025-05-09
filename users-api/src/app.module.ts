@@ -5,7 +5,6 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { MessagingModule } from './messaging/messaging.module';
 import { TransferModule } from './transfer/transfer.module';
-import { UsersSubscribers } from './users/users.subscribers';
 import configuration from './config/configuration';
 
 @Module({
@@ -20,6 +19,5 @@ import configuration from './config/configuration';
     AuthModule,
     TransferModule,
   ],
-  providers: [UsersSubscribers],
 })
 export class AppModule {}

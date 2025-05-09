@@ -26,7 +26,7 @@ async function bootstrap() {
     transport: Transport.RMQ,
     options: {
       urls: [rabbitMqUrl],
-      queue: configService.get<string>('rabbitmq.queue'),
+      queue: `${configService.get<string>('rabbitmq.queue')}_users`,
       queueOptions: {
         durable: true
       },

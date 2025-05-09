@@ -8,8 +8,9 @@ import { UsersService } from 'src/users/users.service';
  */
 interface UserTransferData {
   userId: string;
-  timestamp: string;
-  action: string;
+  transferId: string;
+  message: string;
+  status: string;
 }
 
 /**
@@ -21,7 +22,7 @@ export class TransferController {
 
   constructor(
     private readonly usersService: UsersService,
-    @Inject('TRANSFER_SERVICE') private readonly transferClient: ClientProxy
+    @Inject('TRANSFER_SERVICE') private readonly documentsTransferClient: ClientProxy
   ) {}
 
   /**
@@ -36,11 +37,10 @@ export class TransferController {
     @Payload() data: UserTransferData,
     @Ctx() context: RmqContext
   ) {
-    const eventMessage = JSON.parse(context.getMessage().content.toString());
-    this.logger.log(`transfer initiation received: ${JSON.stringify(eventMessage)}`);
-    
+    this.logger.log(`transfer initiation received: ${JSON.stringify(data)}`);
+
     try {
-      const transferResult = await this.processTransfer(eventMessage);
+      const transferResult = await this.processTransfer(data);
       
       // Acknowledge the message
       const channel = context.getChannelRef();
@@ -50,7 +50,7 @@ export class TransferController {
       const eventPayload = {
         success: true,
         message: 'user data for transfer successfully obtained',
-        transferId: transferResult.transferId,
+        transferId: data.transferId,
         status: transferResult.status,
         user: transferResult.user
       };
@@ -72,6 +72,7 @@ export class TransferController {
       const errorPayload = {
         success: false,
         message: `Failed to initiate transfer: ${(error as Error).message}`,
+        transferId: data.transferId,
       };
       
       // Publish error message to error queue
@@ -84,7 +85,7 @@ export class TransferController {
   /**
    * Processes the transfer (mock implementation)
    */
-  private async processTransfer(data: UserTransferData): Promise<{ transferId: string; status: string, user: Omit<User, 'password'> }> {
+  private async processTransfer(data: UserTransferData): Promise<{ status: string, user: Omit<User, 'password'> }> {
     const userDetails = await this.usersService.findOne(data.userId);
 
     if (!userDetails) {
@@ -95,8 +96,7 @@ export class TransferController {
     const { password, ...sanitizedUser } = userDetails;
 
     return {
-      transferId: `transfer-${Date.now()}`,
-      status: 'pending_confirmation',
+      status: 'pending_documents',
       user: sanitizedUser,
     };
   }
@@ -109,7 +109,7 @@ export class TransferController {
    */
   private async publishTransferResponse(pattern: string, payload: any): Promise<void> {
     try {
-      await this.transferClient.emit(pattern, payload).toPromise();
+      this.documentsTransferClient.emit(pattern, payload);
       this.logger.log(`Message published to ${pattern}`);
     } catch (error) {
       this.logger.error(`Failed to publish message to ${pattern}: ${(error as Error).message}`);
