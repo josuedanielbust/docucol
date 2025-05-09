@@ -12,17 +12,22 @@ import {
   RegisterUserRequestDto,
   RegisterUserResponseDto,
   UnregisterUserResponseDto,
-  RegisterTransferEndpointsResponseDto
+  RegisterTransferEndpointsResponseDto,
+  GetOperatorsResponseDto
 } from './dto/gov-api.dto';
+import { RedisService } from '../redis/redis.service';
 
 @Injectable()
 export class GovApiService {
   private readonly logger = new Logger(GovApiService.name);
   private readonly apiBaseUrl: string;
+  private readonly OPERATORS_CACHE_KEY = 'gov:operators';
+  private readonly OPERATORS_CACHE_TTL = 3600; // Cache TTL in seconds (1 hour)
 
   constructor(
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
+    private readonly redisService: RedisService,
   ) {
     this.apiBaseUrl = configService.get('GOV_CARPETA_BASE_URL') || '';
   }
@@ -157,6 +162,82 @@ export class GovApiService {
   }
 
   /**
+   * Register the list of operators on the government API
+   * @returns list of available operators from the government API
+   */
+  async getOperators(): Promise<GetOperatorsResponseDto> {
+    try {
+      // Try to get operators from Redis cache first
+      const cachedOperators = await this.redisService.get(this.OPERATORS_CACHE_KEY);
+      
+      if (cachedOperators) {
+        this.logger.log('Retrieved operators from cache');
+        return { operators: JSON.parse(cachedOperators) };
+      }
+      
+      // If not in cache, fetch from government API
+      this.logger.log('Fetching operators from government API');
+      const response = this.httpService.get(
+        `${this.apiBaseUrl}/getOperators`
+      ).pipe(
+        map((res) => {
+          return { operators: res.data };
+        }),
+        catchError(err => {
+          this.logger.error(`Error retrieving operators: ${err.message}`);
+          throw new HttpException(
+            err.response?.data?.message || 'Failed to retrieve operators',
+            err.response?.status || HttpStatus.INTERNAL_SERVER_ERROR
+          );
+        })
+      );
+      
+      const operators = await lastValueFrom(response);
+      
+      // Store the result in Redis
+      await this.cacheOperators(operators.operators);
+      
+      return { operators: operators.operators };
+    } catch (error) {
+      this.logger.error(`Error retrieving operators: ${(error as Error).message}`);
+      throw new HttpException(
+        'Failed to retrieve operators from government system',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
+  /**
+   * Cache operators data in Redis
+   * @param operators The operators data to cache
+   */
+  private async cacheOperators(operators: any): Promise<void> {
+    try {
+      await this.redisService.set(
+        this.OPERATORS_CACHE_KEY, 
+        JSON.stringify(operators),
+        this.OPERATORS_CACHE_TTL
+      );
+      this.logger.log('Operators data cached successfully');
+    } catch (error) {
+      this.logger.error(`Failed to cache operators data: ${(error as Error).message}`);
+      // Continue execution even if caching fails
+    }
+  }
+
+  /**
+   * Invalidate the operators cache
+   */
+  async invalidateOperatorsCache(): Promise<void> {
+    try {
+      await this.redisService.del(this.OPERATORS_CACHE_KEY);
+      this.logger.log('Operators cache invalidated');
+    } catch (error) {
+      this.logger.error(`Failed to invalidate operators cache: ${(error as Error).message}`);
+    }
+  }
+
+  /**
    * Register a new operator on the government API
    * @param data Operator parameters
    * @returns operator id from the government API
@@ -188,6 +269,9 @@ export class GovApiService {
       );
 
       const transferEndpoints = await this.registerTransferEndpoints();
+      
+      // Invalidate operators cache when a new operator is registered
+      await this.invalidateOperatorsCache();
 
       return await lastValueFrom(response);
     } catch (error) {

@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Param, Logger } from '@nestjs/common';
+import { Controller, Post, Body, Logger, Inject } from '@nestjs/common';
 import { TransferService } from './transfer.service';
 import { 
   InitiateTransferDto, 
@@ -10,7 +10,9 @@ import {
 export class TransferController {
   private readonly logger = new Logger(TransferController.name);
 
-  constructor(private readonly transferService: TransferService) {}
+  constructor(
+    private readonly transferService: TransferService
+  ) {}
 
   @Post('initiate')
   async initiateTransfer(
