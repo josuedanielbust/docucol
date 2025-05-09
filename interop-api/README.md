@@ -112,7 +112,7 @@ DATABASE_URL=postgresql://user:password@localhost:5432/mydb
 JWT_SECRET=your_jwt_secret
 GOV_CARPETA_BASE_URL=https://govcarpeta-apis-4905ff3c005b.herokuapp.com
 RABBITMQ_URL=amqp://localhost:5672
-RABBITMQ_QUEUE=documents_queue
+RABBITMQ_QUEUE=docucol_events
 ```
 
 ## Running the Application

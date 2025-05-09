@@ -1,5 +1,5 @@
-import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
-import { MessagingService } from 'src/messaging/messaging.service';
+import { Injectable, Logger, HttpException, HttpStatus, Inject } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
 import { GovApiService } from 'src/gov-api/gov-api.service'
 import { 
   InitiateTransferDto,
@@ -13,7 +13,7 @@ export class TransferService {
 
   constructor(
     private readonly govApiServive: GovApiService,
-    private readonly messagingService: MessagingService
+    @Inject('TRANSFER_SERVICE') private readonly transferClient: ClientProxy
   ) { }
 
   /**
@@ -42,10 +42,7 @@ export class TransferService {
         status: 'pending_user',
       };
 
-      await this.messagingService.publish(
-        'document.transfer.initiate', 
-        eventPayload
-      );
+      this.transferClient.emit('document.transfer.initiate', eventPayload);
       
       return { userId: initiateTransferDto.userId, message: 'Transfers initiated' }
     } catch (error) {
@@ -75,10 +72,7 @@ export class TransferService {
         status: 'pending_user',
       };
 
-      await this.messagingService.publish(
-        'document.transfer.complete', 
-        eventPayload
-      );
+      this.transferClient.emit('document.transfer.complete', eventPayload);
       
       return { userId: confirmTransferDto.userId, message: 'Transfer completed' };
     } catch (error) {
