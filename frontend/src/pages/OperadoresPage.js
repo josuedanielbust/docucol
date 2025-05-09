@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Table, Container, Alert, Spinner } from 'react-bootstrap';
+import { Table, Container, Form, Button } from 'react-bootstrap';
 import { getOperadores } from '../services/minTicAPI';
 
 const OperadoresPage = () => {
   const [operadores, setOperadores] = useState([]);
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     const fetchOperadores = async () => {
@@ -13,7 +13,7 @@ const OperadoresPage = () => {
         const data = await getOperadores();
         setOperadores(data);
       } catch (err) {
-        setError('Error al cargar los operadores.');
+        console.error('Error al cargar los operadores:', err);
       } finally {
         setLoading(false);
       }
@@ -23,40 +23,51 @@ const OperadoresPage = () => {
   }, []);
 
   return (
-    <Container className="mt-5">
-      <h2 className="text-center">Lista de Operadores</h2>
-      <p className="text-center text-muted">Consulta los operadores registrados en el sistema.</p>
-      {loading ? (
-        <div className="text-center my-5">
-          <Spinner animation="border" role="status">
-            <span className="visually-hidden">Cargando...</span>
-          </Spinner>
-        </div>
-      ) : error ? (
-        <Alert variant="danger">{error}</Alert>
-      ) : operadores.length === 0 ? (
-        <Alert variant="info">No hay operadores registrados.</Alert>
-      ) : (
-        <Table striped bordered hover responsive className="mt-4">
-          <thead className="table-dark">
-            <tr>
-              <th>ID</th>
-              <th>Nombre</th>
-              <th>Correo</th>
-            </tr>
-          </thead>
-          <tbody>
-            {operadores.map((operador) => (
-              <tr key={operador.id}>
-                <td>{operador.id}</td>
-                <td>{operador.name}</td>
-                <td>{operador.email}</td>
+    <div style={{ backgroundColor: '#f0f2f5', minHeight: '100vh', padding: '20px' }}>
+      <Container className="mt-5">
+        <h2 className="text-center mb-4" style={{ color: '#007bff' }}>Lista de Operadores</h2>
+        <Form className="mb-4">
+          <Form.Group controlId="search" className="mb-3">
+            <Form.Label>Buscar Operador</Form.Label>
+            <Form.Control
+              type="text"
+              placeholder="Escribe el nombre o correo"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{ backgroundColor: '#ffffff', borderRadius: '4px' }}
+            />
+          </Form.Group>
+          <Button variant="primary" type="submit">Buscar</Button>
+        </Form>
+          <Table striped bordered hover responsive className="mt-4">
+            <thead className="table-dark">
+              <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Correo</th>
               </tr>
-            ))}
-          </tbody>
-        </Table>
-      )}
-    </Container>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan="3" className="text-center">Cargando...</td>
+                </tr>
+              ) : operadores.length === 0 ? (
+                <tr>
+                  <td colSpan="3" className="text-center">No hay operadores registrados.</td>
+                </tr>) : (
+                operadores.map((operador) => (
+                  <tr key={operador.id}>
+                    <td>{operador.id}</td>
+                    <td>{operador.name}</td>
+                    <td>{operador.email}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </Table>
+      </Container>
+    </div>
   );
 };
 
