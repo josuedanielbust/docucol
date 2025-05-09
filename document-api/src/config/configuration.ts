@@ -13,7 +13,13 @@ export default () => ({
     port: parseInt(process.env.RABBITMQ_PORT || '5672', 10),
     username: process.env.RABBITMQ_USER || 'user',
     password: process.env.RABBITMQ_PASSWORD || 'password',
-    queue: process.env.RABBITMQ_QUEUE || 'document_uploads',
+    queue: process.env.RABBITMQ_QUEUE || 'docucol_events',
+    queues: {
+      documentUploaded: 'document_uploaded',
+      documentDeleted: 'document_deleted',
+      documentUpdated: 'document_updated',
+      documentProcessing: 'document_processing',
+    },
   },
   minio: {
     host: process.env.MINIO_HOST || '127.0.0.1',

@@ -155,4 +155,61 @@ export class DocumentsService {
 
     return documents;
   }
+
+  async findOnS3ByUserId(userId: string): Promise<{id: string, title: string, presignedUrl: string}[]> {
+    if (!userId) {
+      throw new Error('User ID is required to fetch documents');
+    }
+
+    try {
+      // First get all documents for the user from the database
+      const documents = await this.prisma.document.findMany({
+        where: { userId },
+        select: {
+          id: true,
+          title: true,
+          filePath: true,
+        },
+      });
+
+      // Generate presigned URLs for each document
+      const documentsWithUrls = await Promise.all(
+        documents.map(async (doc) => {
+          // Extract object name from the file path
+          const filePath = doc.filePath;
+          if (!filePath) {
+            this.logger.warn(`Document ${doc.id} has no file path`);
+            return { id: doc.id, title: doc.title, presignedUrl: '' };
+          }
+          
+          const urlParts = new URL(filePath);
+          const pathParts = urlParts.pathname.split('/');
+          const objectName = pathParts.slice(2).join('/');
+
+          try {
+            // Generate a presigned URL (valid for 1 hour)
+            const presignedUrl = await this.minioClient.presignedGetObject(
+              this.bucketName,
+              objectName,
+              60 * 60 // 1 hour in seconds
+            );
+            
+            return {
+              id: doc.id,
+              title: doc.title,
+              presignedUrl,
+            };
+          } catch (error) {
+            this.logger.error(`Error generating presigned URL for document ${doc.id}: ${(error as Error).message}`);
+            return { id: doc.id, title: doc.title, presignedUrl: '' };
+          }
+        })
+      );
+
+      return documentsWithUrls.filter(doc => doc.presignedUrl !== '');
+    } catch (error) {
+      this.logger.error(`Error fetching documents with presigned URLs for user ${userId}: ${(error as Error).message}`);
+      throw new Error(`Failed to fetch documents with presigned URLs: ${(error as Error).message}`);
+    }
+  }
 }

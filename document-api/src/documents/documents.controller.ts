@@ -44,4 +44,17 @@ export class DocumentsController {
       throw error;
     }
   }
+
+  @Get('s3/:userId')
+  async findS3ByUserId(@Param('userId') userId: string): Promise<any> {
+    try {
+      const documents = await this.documentsService.findOnS3ByUserId(userId);
+      return documents;
+    } catch (error) {
+      if ((error as Error).message.includes('User ID is required')) {
+        throw new NotFoundException('Invalid user ID provided');
+      }
+      throw error;
+    }
+  }
 }
