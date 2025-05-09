@@ -19,19 +19,18 @@ export class OperatorsService {
    */
   async sendTransferRequest(path: string, data: any): Promise<any> {
     try {
-      const response = this.httpService.post(
-        path,
-        {
-          id: data.user.userId,
-          citizenName: `${data.user.first_name} ${data.user.last_name}`,
-          citizenEmail: data.user.email,
-          citizenAddress: data.user.address,
-          urlDocuments: data.documents.reduce((result: Record<string, string>, item: { title: string, presignedUrl: string }) => {
-            result[`${item.title}`] = item.presignedUrl;
-            return result;
-          }, {})
-        }
-      ).pipe(
+      const body = {
+        id: data.user.id,
+        citizenName: `${data.user.first_name} ${data.user.last_name}`,
+        citizenEmail: data.user.email,
+        citizenAddress: data.user.address,
+        urlDocuments: data.documents.reduce((result: Record<string, string>, item: { title: string, presignedUrl: string }) => {
+          result[`${item.title}`] = item.presignedUrl;
+          return result;
+        }, {})
+      }
+
+      const response = this.httpService.post(path, body).pipe(
         map((res) => {
           switch (res.status) {
             case HttpStatus.OK:
