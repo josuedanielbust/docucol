@@ -35,7 +35,6 @@ const NavigationBar = () => {
             <Nav.Link as={Link} to="/my-documents">Mis Documentos</Nav.Link>
             <Nav.Link as={Link} to="/operadores">Operadores</Nav.Link>
             <Nav.Link as={Link} to="/upload">Archivos</Nav.Link>
-            <Nav.Link as={Link} to="/transferencia">Transferencia</Nav.Link>
           </Nav>
           <Nav>
             {/* Enlaces condicionales según autenticación */}

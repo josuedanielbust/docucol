@@ -9,7 +9,7 @@ const apiClient = axios.create({
 });
 
 // Función para iniciar una transferencia
-export const initiateTransfer = async (initiateTransferDto) => {
+const initiateTransfer = async (initiateTransferDto) => {
   if (!initiateTransferDto) {
     throw new Error('El objeto initiateTransferDto es requerido.');
   }
@@ -23,7 +23,7 @@ export const initiateTransfer = async (initiateTransferDto) => {
 };
 
 // Función para confirmar una transferencia
-export const confirmTransfer = async (confirmTransferDto) => {
+const confirmTransfer = async (confirmTransferDto) => {
   if (!confirmTransferDto) {
     throw new Error('El objeto confirmTransferDto es requerido.');
   }
@@ -43,3 +43,31 @@ const handleApiError = (error, defaultMessage) => {
   console.error(errorMessage);
   throw new Error(errorMessage);
 };
+
+// Función para obtener la lista de operadores
+const getOperadores = async () => {
+  try {
+    const response = await apiClient.get('/operadores'); // Ajusta la ruta según tu API
+    return response.data;
+  } catch (error) {
+    handleApiError(error, 'Error al obtener la lista de operadores');
+  }
+};
+
+// Función para transferir a un operador
+const transferToOperador = async (operadorId) => {
+  if (!operadorId) {
+    throw new Error('El ID del operador es requerido.');
+  }
+
+  try {
+    const initiateTransferDto = { operadorId }; // Construye el objeto necesario
+    const response = await initiateTransfer(initiateTransferDto); // Llama a initiateTransfer
+    return response; // Devuelve la respuesta
+  } catch (error) {
+    handleApiError(error, 'Error al transferir al operador');
+  }
+};
+
+// Exporta las funciones necesarias
+export { initiateTransfer, confirmTransfer, getOperadores, transferToOperador };

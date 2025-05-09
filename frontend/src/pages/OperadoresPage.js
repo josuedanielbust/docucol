@@ -1,26 +1,36 @@
 import { useEffect, useState } from 'react';
 import { Table, Container, Form, Button } from 'react-bootstrap';
-import { getOperadores } from '../services/minTicAPI';
+import TransferPage from './TransferPage';
 
 const OperadoresPage = () => {
   const [operadores, setOperadores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [message, setMessage] = useState('');
+  const [currentPage, setCurrentPage] = useState('operadores'); // Controla la página actual
+  const [selectedOperadorId, setSelectedOperadorId] = useState(null); // ID del operador seleccionado
 
   useEffect(() => {
-    const fetchOperadores = async () => {
-      try {
-        const data = await getOperadores();
-        setOperadores(data);
-      } catch (err) {
-        console.error('Error al cargar los operadores:', err);
-      } finally {
-        setLoading(false);
-      }
+    // Cargar datos de ejemplo directamente
+    const fetchOperadores = () => {
+      setOperadores([
+        { id: 1, name: 'Operador Ejemplo 1', email: 'ejemplo1@correo.com' },
+        { id: 2, name: 'Operador Ejemplo 2', email: 'ejemplo2@correo.com' },
+      ]);
+      setLoading(false);
     };
 
     fetchOperadores();
   }, []);
+
+  const handleTransfer = (operadorId) => {
+    setSelectedOperadorId(operadorId); // Guarda el operador seleccionado
+    setCurrentPage('transfer'); // Cambia a la página de transferencia
+  };
+
+  if (currentPage === 'transfer') {
+    return <TransferPage operadorId={selectedOperadorId} />;
+  }
 
   return (
     <div style={{ backgroundColor: '#f0f2f5', minHeight: '100vh', padding: '20px' }}>
@@ -39,33 +49,37 @@ const OperadoresPage = () => {
           </Form.Group>
           <Button variant="primary" type="submit">Buscar</Button>
         </Form>
-          <Table striped bordered hover responsive className="mt-4">
-            <thead className="table-dark">
+        {message && <div className="alert alert-info">{message}</div>}
+        <Table striped bordered hover responsive className="mt-4">
+          <thead className="table-dark">
+            <tr>
+              <th>ID</th>
+              <th>Nombre</th>
+              <th>Correo</th>
+              <th>Cambiar Operador</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
               <tr>
-                <th>ID</th>
-                <th>Nombre</th>
-                <th>Correo</th>
+                <td colSpan="4" className="text-center">Cargando...</td>
               </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan="3" className="text-center">Cargando...</td>
-                </tr>
-              ) : operadores.length === 0 ? (
-                <tr>
-                  <td colSpan="3" className="text-center">No hay operadores registrados.</td>
-                </tr>) : (
-                operadores.map((operador) => (
-                  <tr key={operador.id}>
-                    <td>{operador.id}</td>
-                    <td>{operador.name}</td>
-                    <td>{operador.email}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </Table>
+            ) : operadores.map((operador) => (
+              <tr key={operador.id}>
+                <td>{operador.id}</td>
+                <td>{operador.name}</td>
+                <td>{operador.email}</td>
+                <td>
+                  <Button
+                    variant="success"
+                    onClick={() => handleTransfer(operador.id)}>
+                    Transferencia
+                  </Button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
       </Container>
     </div>
   );
