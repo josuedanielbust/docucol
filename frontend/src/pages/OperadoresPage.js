@@ -34,7 +34,7 @@ const OperadoresPage = () => {
       setMessage(`Transferencia iniciada con éxito al operador ${operadorId}.`);
       setTimeout(() => {setMessage(''); }, 3000);
     } catch (error) {
-      setMessage('Error al clinician la transferencia.');
+      setMessage('Error al iniciar la transferencia.');
       setTimeout(() => {setMessage(''); }, 3000);
 
     }
