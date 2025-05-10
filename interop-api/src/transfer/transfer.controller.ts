@@ -63,7 +63,14 @@ export class TransferController {
     @Param('id') userId: string,
   ): Promise<any> {
     this.logger.log(`Confirming Citizen transfer for document ${userId}`);
-    return this.transferService.transferCitizenConfirmUserId(userId);
+    this.transferService.transferCitizenConfirmUserId(userId);
+    return {
+      statusCode: 302,
+      headers: {
+      Location: `/` // Path for redirection
+      },
+      message: 'Redirecting to confirmation page'
+    };
   }
 
   @Post('transferCitizenConfirm')
