@@ -336,14 +336,14 @@ export class GovApiService {
     try {
       const operatorId = this.configService.get('OPERATOR_ID');
 
-      const baseUrl = this.configService.get('API_BASE_URL');
+      const baseUrl = this.configService.get('app.domain');
       
       const response = this.httpService.post(
         `${this.apiBaseUrl}/registerTransferEndPoint`,
         {
           idOperator: operatorId,
-          endPoint: `${baseUrl}/transfer/receive`,
-          endPointConfirm: `${baseUrl}/transfer/confirm`
+          endPoint: `${baseUrl}/interop/transfer/transferCitizen`,
+          endPointConfirm: `${baseUrl}/interop/transfer/transferCitizen/confirm/:id`
         }
       ).pipe(
         map((res) => {

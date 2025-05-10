@@ -9,6 +9,7 @@ export default () => ({
   },
   app: {
     port: parseInt(process.env.PORT || '3000', 10),
+    domain: process.env.APP_DOMAIN,
   },
   govCarpeta: {
     baseUrl: process.env.GOV_CARPETA_BASE_URL || 'https://govcarpeta-apis-4905ff3c005b.herokuapp.com'

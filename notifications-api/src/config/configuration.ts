@@ -9,7 +9,8 @@ export default () => ({
   },
   app: {
     port: parseInt(process.env.PORT || '3000', 10),
-    name: process.env.OPERATOR_NAME || 'DocuCol'
+    name: process.env.OPERATOR_NAME || 'DocuCol',
+    domain: process.env.APP_DOMAIN,
   },
   email: {
     templatedir: process.env.EMAIL_TEMPLATE_DIR || './src/templates/emails'
