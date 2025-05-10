@@ -12,6 +12,7 @@ const TransferComponent = () => {
       setTransferId(response.transferId); // Asume que el backend devuelve un transferId
       setMessage('Transferencia iniciada con éxito.');
     } catch (error) {
+      console.error('Error during initiateTransfer:', error);
       setMessage('Error al iniciar la transferencia.');
     }
   };
