@@ -100,7 +100,7 @@ spec:
     spec:
       containers:
       - name: document-api
-        image: document-api:latest
+        image: valeriag5/docucol-document-api:latest
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3000

@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: notifications-api
-        image: notifications-api:latest
+        image: valeriag5/docucol-notifications-api
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3000

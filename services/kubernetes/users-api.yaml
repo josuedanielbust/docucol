@@ -114,7 +114,7 @@ spec:
     spec:
       containers:
       - name: users-api
-        image: users-api:latest
+        image: valeriag5/docucol-users-api
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3000

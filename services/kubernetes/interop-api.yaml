@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: interop-api
-        image: interop-api:latest
+        image: valeriag5/docucol-interop-api
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3000
