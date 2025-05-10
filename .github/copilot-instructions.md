@@ -96,3 +96,19 @@ When generating new documentation or modifying existing documentation:
   - Place new documents in the appropriate directory within the `docs/` structure
   - Follow the established naming conventions
   - Update index or navigation files when adding new documentation
+
+## Repository Organization
+
+1. **Mono-Repository Structure**
+  - Always specify which service/microservice/folder the new code should target
+  - Provide the full path for new files being added
+  - When modifying existing code, specify the exact file path
+  - Ensure changes adhere to the organization of the mono-repository
+  - Follow dependency management practices specific to each service
+
+2. **Service Identification**
+  - Clearly identify the target service for all code changes
+  - Consider cross-service impacts when making changes
+  - Respect service boundaries and interfaces
+  - Adhere to service-specific coding conventions
+  - Document any required changes to service integration points

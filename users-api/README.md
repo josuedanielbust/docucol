@@ -271,7 +271,33 @@ The application uses RabbitMQ for event-driven communication:
 - **Publishers**: The `MessagingService` provides methods to publish messages to RabbitMQ.
 - **Subscribers**: Use the `@RabbitSubscriber()` decorator to subscribe to specific message patterns.
 
-Example publisher:
+### Messaging Architecture
+
+The Users API implements a hybrid application model:
+
+1. **HTTP Server**: Handles synchronous API requests
+2. **RabbitMQ Consumer**: Processes asynchronous events from other services
+
+The messaging module connects to RabbitMQ with these key components:
+
+- **MessagingModule**: Configures RabbitMQ connection and provides services
+- **MessagingService**: Offers methods for publishing messages to RabbitMQ
+- **MessagingExplorer**: Automatically discovers methods decorated with @RabbitSubscriber
+- **RabbitSubscriber Decorator**: Marks methods as subscribers to specific event patterns
+
+### Message Patterns
+
+Users API publishes these event types:
+- `user.created`: When a new user is registered
+- `user.updated`: When user information is modified
+- `user.deleted`: When a user account is removed
+
+Users API subscribes to these event types:
+- `document.ownership.updated`: When document ownership changes
+- `transfer.confirmed`: When a document transfer is completed
+
+### Example Publisher
+
 ```typescript
 @Injectable()
 export class UserService {
@@ -289,7 +315,8 @@ export class UserService {
 }
 ```
 
-Example subscriber:
+### Example Subscriber
+
 ```typescript
 @Injectable()
 export class UserEventHandler {

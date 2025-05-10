@@ -19,7 +19,7 @@ import { RABBIT_PROVIDER } from './constants';
           options: {
             urls: [configService.get<string>('rabbitmq.url') || 
                   `amqp://${configService.get<string>('rabbitmq.username')}:${configService.get<string>('rabbitmq.password')}@${configService.get<string>('rabbitmq.host')}:${configService.get<number>('rabbitmq.port')}`],
-            queue: `${configService.get<string>('rabbitmq.queue')}_transfers`,
+            queue: `${configService.get<string>('rabbitmq.queue')}_interop`,
             queueOptions: {
               durable: true,
             },
