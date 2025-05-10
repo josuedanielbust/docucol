@@ -9,9 +9,9 @@ resources:
   - secrets.yaml
   - storage.yaml
   - postgres-users-init.yaml
-  - redis-config.yaml
   - traefik.yaml
   - rabbitmq.yaml
+  - rabbitmq-plugins.yaml
   - redis.yaml
   - document-api.yaml
   - minio.yaml
@@ -20,3 +20,4 @@ resources:
   - notifications-api.yaml
   - mailhog.yaml
   - ingress.yaml
+  - redis-config.yaml

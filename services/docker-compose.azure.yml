@@ -1,0 +1,101 @@
+name: docucol
+
+services:
+  frontend:
+    image: ${REGISTRY_NAME}.azurecr.io/docucol/frontend:latest
+    environment:
+      - NODE_ENV=${NODE_ENV}
+      - PORT=${PORT}
+  
+  document-api:
+    image: ${REGISTRY_NAME}.azurecr.io/docucol/document-api:latest
+    environment:
+      - NODE_ENV=${NODE_ENV}
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@document-postgres:5432/${POSTGRES_DB}?schema=public
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+      - PORT=${PORT}
+      - MINIO_HOST=minio
+      - MINIO_PORT=9000
+      - MINIO_USE_SSL=false
+      - MINIO_ACCESS_KEY=${MINIO_ROOT_USER:-minioadmin}
+      - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD:-minioadmin}
+      - MINIO_BUCKET=${MINIO_BUCKET:-docucol}
+      - STORAGE_PUBLIC_URL=https://storage.docucol.${AZURE_DOMAIN}
+      - APP_DOMAIN=${APP_DOMAIN}
+  
+  users-api:
+    image: ${REGISTRY_NAME}.azurecr.io/docucol/users-api:latest
+    environment:
+      - NODE_ENV=${NODE_ENV}
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@users-postgres:5432/${POSTGRES_DB}?schema=public
+      - PORT=${PORT}
+      - APP_DOMAIN=${APP_DOMAIN}
+  
+  interop-api:
+    image: ${REGISTRY_NAME}.azurecr.io/docucol/interop-api:latest
+    environment:
+      - NODE_ENV=${NODE_ENV}
+      - PORT=${PORT}
+      - API_BASE_URL=http://interop-api:${PORT}/interop
+      - USERS_API_URL=http://users-api:${PORT}
+      - DOCUMENT_API_URL=http://document-api:${PORT}
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - APP_DOMAIN=${APP_DOMAIN}
+  
+  notifications-api:
+    image: ${REGISTRY_NAME}.azurecr.io/docucol/notifications-api:latest
+    environment:
+      - NODE_ENV=${NODE_ENV}
+      - PORT=${PORT}
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+      - EMAIL_HOST=mailhog
+      - EMAIL_PORT=1025
+      - EMAIL_FROM=notifications@docucol.com
+      - APP_DOMAIN=${APP_DOMAIN}
+  
+  # Use managed services in Azure for these components when possible
+  rabbitmq:
+    image: rabbitmq:management
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --requirepass ${REDIS_PASSWORD} --appendonly yes
+  
+  document-postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - document-postgres_data:/var/lib/postgresql/data
+  
+  users-postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - user-postgres_data:/var/lib/postgresql/data
+  
+  minio:
+    image: minio/minio:latest
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+  
+  mailhog:
+    image: mailhog/mailhog:latest
+
+volumes:
+  document-postgres_data:
+  user-postgres_data:
+  minio_data:
+  redis_data:

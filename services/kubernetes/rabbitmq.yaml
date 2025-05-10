@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: rabbitmq
-        image: rabbitmq:management
+        image: rabbitmq:management-alpine  # Using Alpine-based image for smaller footprint
         ports:
         - name: amqp
           containerPort: 5672
@@ -40,14 +40,26 @@ spec:
               key: RABBITMQ_ERLANG_COOKIE
               optional: true
         - name: RABBITMQ_VM_MEMORY_HIGH_WATERMARK
-          value: "0.6"
+          value: "0.4"  # Lowered memory threshold
         - name: RABBITMQ_DISK_FREE_LIMIT
           value: "2GB"
         - name: RABBITMQ_PLUGINS_EXPAND_DIR
           value: "/var/lib/rabbitmq/plugins-expand"
+        # Ultra-lightweight memory optimization
+        - name: RABBITMQ_VM_MEMORY_HIGH_WATERMARK_PAGING_RATIO
+          value: "0.8"
+        - name: RABBITMQ_MNESIA_DUMP_LOG_WRITE_THRESHOLD
+          value: "25"
+        - name: RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS
+          value: "+sbwt none +sbwtdcpu none +sbwtdio none +A4 +MBas ageffcbf +MHas ageffcbf +MBlmbcs 32 +MHlmbcs 32"
+        # Disable plugins to reduce memory usage
+        - name: RABBITMQ_ENABLED_PLUGINS_FILE
+          value: "/etc/rabbitmq/enabled_plugins"
         volumeMounts:
         - name: rabbitmq-data
           mountPath: /var/lib/rabbitmq
+        - name: enabled-plugins
+          mountPath: /etc/rabbitmq/enabled_plugins
         livenessProbe:
           exec:
             command: ["rabbitmq-diagnostics", "check_port_connectivity"]
@@ -71,18 +83,22 @@ spec:
           timeoutSeconds: 5
         resources:
           limits:
-            cpu: "1000m"
-            memory: "1Gi"
-          requests:
             cpu: "200m"
-            memory: "512Mi"
+            memory: "256Mi"
+          requests:
+            cpu: "50m"
+            memory: "64Mi"
         securityContext:
           runAsUser: 999
           runAsGroup: 999
           allowPrivilegeEscalation: false
       volumes:
       - name: rabbitmq-data
-        emptyDir: {}  # Use emptyDir instead of PVC for testing/development
+        emptyDir: {}
+      - name: enabled-plugins
+        configMap:
+          name: rabbitmq-plugins
+          defaultMode: 0644
 ---
 apiVersion: v1
 kind: Service

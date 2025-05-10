@@ -32,9 +32,9 @@ data:
     aof-use-rdb-preamble yes
 
     # Memory Management
-    maxmemory 512mb
+    maxmemory 256mb
     maxmemory-policy allkeys-lru
-    maxmemory-samples 5
+    maxmemory-samples 3
 
     # Security
     rename-command FLUSHDB ""
