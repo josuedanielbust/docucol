@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notifications-api
+  namespace: docucol
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notifications-api
+  template:
+    metadata:
+      labels:
+        app: notifications-api
+    spec:
+      containers:
+      - name: notifications-api
+        image: notifications-api:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3000
+        env:
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: docucol-config
+              key: NODE_ENV
+        - name: PORT
+          valueFrom:
+            configMapKeyRef:
+              name: docucol-config
+              key: PORT
+        - name: RABBITMQ_URL
+          value: amqp://$(RABBITMQ_USER):$(RABBITMQ_PASSWORD)@rabbitmq:5672
+        - name: RABBITMQ_USER
+          valueFrom:
+            secretKeyRef:
+              name: docucol-secrets
+              key: RABBITMQ_USER
+        - name: RABBITMQ_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: docucol-secrets
+              key: RABBITMQ_PASSWORD
+        - name: EMAIL_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: docucol-config
+              key: EMAIL_HOST
+        - name: EMAIL_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: docucol-config
+              key: EMAIL_PORT
+        - name: EMAIL_FROM
+          valueFrom:
+            configMapKeyRef:
+              name: docucol-config
+              key: EMAIL_FROM
+        - name: APP_DOMAIN
+          valueFrom:
+            configMapKeyRef:
+              name: docucol-config
+              key: APP_DOMAIN
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 20
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notifications-api
+  namespace: docucol
+spec:
+  selector:
+    app: notifications-api
+  ports:
+  - port: 3000
+    targetPort: 3000

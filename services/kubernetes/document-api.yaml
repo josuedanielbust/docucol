@@ -1,0 +1,211 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: document-postgres
+  namespace: docucol
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: document-postgres
+  template:
+    metadata:
+      labels:
+        app: document-postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:latest
+        env:
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: docucol-secrets
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: docucol-secrets
+              key: POSTGRES_PASSWORD
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: docucol-secrets
+              key: POSTGRES_DB
+        # Add PostgreSQL configuration parameters
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        - name: POSTGRES_INITDB_ARGS
+          value: "--data-checksums --encoding=UTF8 --locale=en_US.utf8"
+        ports:
+        - containerPort: 5432
+          name: postgres
+        volumeMounts:
+        - name: document-postgres-data
+          mountPath: /var/lib/postgresql/data
+        livenessProbe:
+          exec:
+            command: ["pg_isready", "-U", "$(POSTGRES_USER)", "-d", "$(POSTGRES_DB)"]
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command: ["pg_isready", "-U", "$(POSTGRES_USER)", "-d", "$(POSTGRES_DB)"]
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        resources:
+          limits:
+            cpu: "1000m"
+            memory: "1Gi"
+          requests:
+            cpu: "200m"
+            memory: "512Mi"
+        securityContext:
+          runAsUser: 999
+          runAsGroup: 999
+          allowPrivilegeEscalation: false
+      volumes:
+      - name: document-postgres-data
+        persistentVolumeClaim:
+          claimName: document-postgres-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: document-postgres
+  namespace: docucol
+spec:
+  selector:
+    app: document-postgres
+  ports:
+  - port: 5432
+    targetPort: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: document-api
+  namespace: docucol
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: document-api
+  template:
+    metadata:
+      labels:
+        app: document-api
+    spec:
+      containers:
+      - name: document-api
+        image: document-api:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3000
+        env:
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: docucol-config
+              key: NODE_ENV
+        - name: PORT
+          valueFrom:
+            configMapKeyRef:
+              name: docucol-config
+              key: PORT
+        - name: DATABASE_URL
+          value: postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@document-postgres:5432/$(POSTGRES_DB)?schema=public
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: docucol-secrets
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: docucol-secrets
+              key: POSTGRES_PASSWORD
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: docucol-secrets
+              key: POSTGRES_DB
+        - name: RABBITMQ_URL
+          value: amqp://$(RABBITMQ_USER):$(RABBITMQ_PASSWORD)@rabbitmq:5672
+        - name: RABBITMQ_USER
+          valueFrom:
+            secretKeyRef:
+              name: docucol-secrets
+              key: RABBITMQ_USER
+        - name: RABBITMQ_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: docucol-secrets
+              key: RABBITMQ_PASSWORD
+        - name: MINIO_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: docucol-config
+              key: MINIO_HOST
+        - name: MINIO_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: docucol-config
+              key: MINIO_PORT
+        - name: MINIO_USE_SSL
+          valueFrom:
+            configMapKeyRef:
+              name: docucol-config
+              key: MINIO_USE_SSL
+        - name: MINIO_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: docucol-secrets
+              key: MINIO_ROOT_USER
+        - name: MINIO_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: docucol-secrets
+              key: MINIO_ROOT_PASSWORD
+        - name: MINIO_BUCKET
+          valueFrom:
+            configMapKeyRef:
+              name: docucol-config
+              key: MINIO_BUCKET
+        - name: STORAGE_PUBLIC_URL
+          valueFrom:
+            configMapKeyRef:
+              name: docucol-config
+              key: STORAGE_PUBLIC_URL
+        - name: APP_DOMAIN
+          valueFrom:
+            configMapKeyRef:
+              name: docucol-config
+              key: APP_DOMAIN
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 20
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: document-api
+  namespace: docucol
+spec:
+  selector:
+    app: document-api
+  ports:
+  - port: 3000
+    targetPort: 3000

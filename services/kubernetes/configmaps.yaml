@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: docucol-config
+  namespace: docucol
+data:
+  # General configuration
+  NODE_ENV: "production"
+  PORT: "3000"
+  APP_DOMAIN: "docucol.local"
+  
+  # Services configuration
+  API_BASE_URL: "http://interop-api:3000/interop"
+  USERS_API_URL: "http://users-api:3000"
+  DOCUMENT_API_URL: "http://document-api:3000"
+  
+  # MinIO configuration
+  MINIO_HOST: "minio"
+  MINIO_PORT: "9000"
+  MINIO_USE_SSL: "false"
+  MINIO_BUCKET: "docucol"
+  STORAGE_PUBLIC_URL: "http://storage.docucol.local"
+  
+  # Redis configuration
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+  
+  # Email configuration
+  EMAIL_HOST: "mailhog"
+  EMAIL_PORT: "1025"
+  EMAIL_FROM: "notifications@docucol.com"

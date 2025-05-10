@@ -1,0 +1,104 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: interop-api
+  namespace: docucol
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: interop-api
+  template:
+    metadata:
+      labels:
+        app: interop-api
+    spec:
+      containers:
+      - name: interop-api
+        image: interop-api:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3000
+        env:
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: docucol-config
+              key: NODE_ENV
+        - name: PORT
+          valueFrom:
+            configMapKeyRef:
+              name: docucol-config
+              key: PORT
+        - name: API_BASE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: docucol-config
+              key: API_BASE_URL
+        - name: USERS_API_URL
+          valueFrom:
+            configMapKeyRef:
+              name: docucol-config
+              key: USERS_API_URL
+        - name: DOCUMENT_API_URL
+          valueFrom:
+            configMapKeyRef:
+              name: docucol-config
+              key: DOCUMENT_API_URL
+        - name: RABBITMQ_URL
+          value: amqp://$(RABBITMQ_USER):$(RABBITMQ_PASSWORD)@rabbitmq:5672
+        - name: RABBITMQ_USER
+          valueFrom:
+            secretKeyRef:
+              name: docucol-secrets
+              key: RABBITMQ_USER
+        - name: RABBITMQ_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: docucol-secrets
+              key: RABBITMQ_PASSWORD
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: docucol-config
+              key: REDIS_HOST
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: docucol-config
+              key: REDIS_PORT
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: docucol-secrets
+              key: REDIS_PASSWORD
+        - name: APP_DOMAIN
+          valueFrom:
+            configMapKeyRef:
+              name: docucol-config
+              key: APP_DOMAIN
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 20
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "100m"
+            memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: interop-api
+  namespace: docucol
+spec:
+  selector:
+    app: interop-api
+  ports:
+  - port: 3000
+    targetPort: 3000

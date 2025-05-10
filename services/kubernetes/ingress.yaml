@@ -1,0 +1,104 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: docucol-ingress
+  namespace: docucol
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    # Storage path rewriting similar to Traefik
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      location ~ ^/storage/(.*)$ {
+        proxy_pass http://minio:9000/docucol/$1;
+      }
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: "traefik.docucol.local"
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: traefik-dashboard
+            port:
+              number: 8080
+  - host: "mail.docucol.local"
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: mailhog
+            port:
+              number: 8025
+  - host: "minio.docucol.local"
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: minio
+            port:
+              number: 9000
+  - host: "minio-console.docucol.local"
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: minio
+            port:
+              number: 9001
+  - host: "storage.docucol.local"
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: minio
+            port:
+              number: 9000
+  - host: "docucol.local"
+    http:
+      paths:
+      - path: /users/(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: users-api
+            port:
+              number: 3000
+      - path: /documents/(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: document-api
+            port:
+              number: 3000
+      - path: /interop/(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: interop-api
+            port:
+              number: 3000
+      - path: /notifications/(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: notifications-api
+            port:
+              number: 3000
+      - path: /storage/(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: minio
+            port:
+              number: 9000
