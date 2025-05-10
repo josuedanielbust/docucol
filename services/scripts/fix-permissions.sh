@@ -1,41 +1,67 @@
 #!/bin/sh
-# filepath: /Users/josuedanielbust/universidad/arch-soft/DocuCol/services/scripts/fix-permissions.sh
 
-# This script fixes permissions on the document uploads volume
-# It should be run when file access issues are detected
+# This script helps resolve access issues with MinIO storage in DocuCol
+# It can be run when there are problems with file access or permissions
 
 # Get the container IDs
-DOC_API_CONTAINER=$(docker compose ps -q document-api)
-STORAGE_CONTAINER=$(docker compose ps -q document-storage)
+MINIO_CONTAINER=$(docker compose ps -q minio)
 
-if [ -z "$DOC_API_CONTAINER" ] || [ -z "$STORAGE_CONTAINER" ]; then
-  echo "Error: Cannot find containers. Make sure the services are running."
+if [ -z "$MINIO_CONTAINER" ]; then
+  echo "Error: Cannot find MinIO container. Make sure MinIO service is running."
   exit 1
 fi
 
-# Get the user IDs
-DOC_API_UID=$(docker exec $DOC_API_CONTAINER id -u)
-NGINX_UID=$(docker exec $STORAGE_CONTAINER id -u nginx)
+echo "==== DocuCol MinIO Storage Diagnostic Tool ===="
 
-echo "Document API user ID: $DOC_API_UID"
-echo "Nginx user ID: $NGINX_UID"
+# Check if MinIO is healthy
+MINIO_HEALTH=$(docker exec $MINIO_CONTAINER curl -s -o /dev/null -w "%{http_code}" http://localhost:9000/minio/health/live || echo "Failed")
+echo "MinIO Health Check: $MINIO_HEALTH"
 
-# Create a temporary container to fix permissions
-echo "Fixing permissions on document_uploads volume..."
-docker run --rm -v document_uploads:/data alpine /bin/sh -c "
-  # Make the directory accessible to both users
-  find /data -type d -exec chmod 755 {} \;
-  # Make files readable by both users
-  find /data -type f -exec chmod 644 {} \;
-  # Create a test file for verification
-  echo 'Test file for permission verification' > /data/test-permissions.txt
-  chmod 644 /data/test-permissions.txt
-"
+# Check for MinIO configuration
+echo "Checking MinIO Configuration..."
+docker exec $MINIO_CONTAINER mc config host add local http://localhost:9000 minioadmin minioadmin 2>/dev/null
 
-echo "Permissions fixed. Testing access..."
+# Check if the bucket exists
+BUCKET_NAME=${MINIO_BUCKET:-docucol}
+BUCKET_EXISTS=$(docker exec $MINIO_CONTAINER mc ls local/ | grep -c $BUCKET_NAME || echo "0")
+echo "Bucket '$BUCKET_NAME' exists: $([ "$BUCKET_EXISTS" -gt 0 ] && echo 'Yes' || echo 'No')"
 
-# Test Nginx access
-NGINX_TEST=$(docker exec $STORAGE_CONTAINER ls -la /usr/share/nginx/html/ | grep test-permissions.txt || echo "Not found")
-echo "Nginx can see the test file: $NGINX_TEST"
+# Create bucket if it doesn't exist
+if [ "$BUCKET_EXISTS" -eq 0 ]; then
+  echo "Creating bucket '$BUCKET_NAME'..."
+  docker exec $MINIO_CONTAINER mc mb local/$BUCKET_NAME
+fi
 
-echo "Done. Please check if the document storage service is now functioning correctly."
+# Set public policy for the bucket
+echo "Setting download policy for bucket..."
+docker exec $MINIO_CONTAINER mc policy set download local/$BUCKET_NAME
+
+# Configure CORS for direct access
+echo "Configuring CORS for the bucket..."
+docker exec $MINIO_CONTAINER mc admin api corsrule add local/$BUCKET_NAME <<EOF
+{
+  "corsRules": [
+    {
+      "allowedOrigins": ["*"],
+      "allowedMethods": ["GET", "HEAD"],
+      "allowedHeaders": ["*"],
+      "exposeHeaders": ["ETag", "Content-Length", "Content-Type"]
+    }
+  ]
+}
+EOF
+
+# Create a test file
+echo "Creating test file..."
+echo "This is a test file for DocuCol MinIO storage." > /tmp/minio-test.txt
+docker cp /tmp/minio-test.txt $MINIO_CONTAINER:/tmp/minio-test.txt
+docker exec $MINIO_CONTAINER mc cp /tmp/minio-test.txt local/$BUCKET_NAME/test-file.txt
+rm /tmp/minio-test.txt
+
+echo "==== Test file created in MinIO ====="
+echo "You can verify access using:"
+echo "  Browser: http://minio-console.docucol.local (credentials: minioadmin/minioadmin)"
+echo "  Direct MinIO access: http://minio.docucol.local/$BUCKET_NAME/test-file.txt"
+echo "  Via /storage path: http://localhost/storage/test-file.txt"
+echo "====================================="
+echo "Done."

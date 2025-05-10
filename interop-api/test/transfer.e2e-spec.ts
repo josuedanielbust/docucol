@@ -98,6 +98,18 @@ describe('Transfer API (e2e)', () => {
       expect(response.body).toHaveProperty('fromUserId', mockFromUserId);
       expect(response.body).toHaveProperty('toUserId', mockToUserId);
     });
+
+    it('should list all transfers for a user (GET /transfer/user/:userId)', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/transfer/user/${mockToUserId}`)
+        .expect(200);
+
+      expect(Array.isArray(response.body)).toBe(true);
+      // The user should have at least one transfer
+      expect(response.body.length).toBeGreaterThan(0);
+      // Check if the transfer we created is in the list
+      expect(response.body.some((transfer: any) => transfer.transferId === transferId)).toBe(true);
+    });
   });
 
   afterAll(async () => {

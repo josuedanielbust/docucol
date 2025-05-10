@@ -14,9 +14,10 @@ These services represent the infrastructure layer in the DocuCol system architec
 
 - **PostgreSQL**: Primary data store for application persistence
 - **RabbitMQ**: Message broker for asynchronous communication between services
+- **MinIO**: S3-compatible object storage for document files
+- **Redis**: Cache and session management
 
 ## Directory Structure
-
 ```
 services/
 ├── docker-compose.yml   # Service definitions and configuration

@@ -1,4 +1,8 @@
-.DS_Store
+# Environment variables
 .env
+
+# Other existing entries
+.DS_Store
 node_modules/
 dist/
+package-lock.json

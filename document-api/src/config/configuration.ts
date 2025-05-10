@@ -13,7 +13,22 @@ export default () => ({
     port: parseInt(process.env.RABBITMQ_PORT || '5672', 10),
     username: process.env.RABBITMQ_USER || 'user',
     password: process.env.RABBITMQ_PASSWORD || 'password',
-    queue: process.env.RABBITMQ_QUEUE || 'document_uploads',
+    queue: process.env.RABBITMQ_QUEUE || 'docucol_events',
+    queues: {
+      documentUploaded: 'document_uploaded',
+      documentDeleted: 'document_deleted',
+      documentUpdated: 'document_updated',
+      documentProcessing: 'document_processing',
+    },
+  },
+  minio: {
+    host: process.env.MINIO_HOST || '127.0.0.1',
+    port: parseInt(process.env.MINIO_PORT || '9000', 10),
+    useSSL: process.env.MINIO_USE_SSL === 'true',
+    accessKey: process.env.MINIO_ACCESS_KEY || 'minioadmin',
+    secretKey: process.env.MINIO_SECRET_KEY || 'minioadmin',
+    bucketName: process.env.MINIO_BUCKET_NAME || 'documents',
+    publicUrl: process.env.MINIO_PUBLIC_URL || 'http://minio.docucol.local',
   },
   app: {
     port: parseInt(process.env.PORT || '3000', 10),

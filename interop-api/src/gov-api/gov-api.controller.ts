@@ -8,7 +8,8 @@ import {
   AuthenticateDocumentResponseDto,
   RegisterUserRequestDto,
   RegisterUserResponseDto,
-  UnregisterUserResponseDto
+  UnregisterUserResponseDto,
+  GetOperatorsResponseDto
 } from './dto/gov-api.dto';
 
 @Controller('gov-api')
@@ -39,6 +40,12 @@ export class GovApiController {
   ): Promise<ValidateUserResponseDto> {
     this.logger.log(`Validation requested for document ${userId}`);
     return this.govApiService.validateUser(userId);
+  }
+
+  @Get('operators')
+  async getOperators(): Promise<GetOperatorsResponseDto> {
+    this.logger.log(`Retrieve operators request`);
+    return this.govApiService.getOperators();
   }
 
   @Post('operators')

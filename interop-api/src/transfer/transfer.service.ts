@@ -1,24 +1,19 @@
-import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
-import { HttpService } from '@nestjs/axios';
-import { ConfigService } from '@nestjs/config';
-import { MessagingService } from '../messaging/messaging.service';
+import { Injectable, Logger, HttpException, HttpStatus, Inject } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
+import { GovApiService } from 'src/gov-api/gov-api.service'
 import { 
   InitiateTransferDto,
   ConfirmTransferDto,
   TransferResponseDto
 } from './dto/transfer.dto';
 
-import { GovApiService } from '../gov-api/gov-api.service'
-
 @Injectable()
 export class TransferService {
   private readonly logger = new Logger(TransferService.name);
 
   constructor(
-    private readonly httpService: HttpService,
-    private readonly configService: ConfigService,
     private readonly govApiServive: GovApiService,
-    private readonly messagingService: MessagingService
+    @Inject('TRANSFER_SERVICE') private readonly transferClient: ClientProxy
   ) { }
 
   /**
@@ -39,8 +34,16 @@ export class TransferService {
       }
 
       // Send message to RabbitMQ with userId as payload
-      this.logger.log(`Sending userId ${initiateTransferDto.userId} to RabbitMQ queue`);
-      await this.messagingService.publishInitiateTransferEvent(initiateTransferDto.userId);
+      this.logger.log(`Sending userId ${initiateTransferDto.userId} to RabbitMQ queue with pattern`);
+      const eventPayload = {
+        message: 'initiating transfer',
+        transferId: `transfer-${Date.now()}`,
+        userId: initiateTransferDto.userId,
+        operatorId: initiateTransferDto.operatorId,
+        status: 'pending_user',
+      };
+
+      this.transferClient.emit('document.transfer.initiate', eventPayload);
       
       return { userId: initiateTransferDto.userId, message: 'Transfers initiated' }
     } catch (error) {
@@ -63,8 +66,14 @@ export class TransferService {
   async confirmTransfer(confirmTransferDto: ConfirmTransferDto): Promise<TransferResponseDto> {
     try {
       // Send confirmation message to RabbitMQ
-      this.logger.log(`Sending confirmation for userId ${confirmTransferDto.userId} to RabbitMQ queue`);
-      await this.messagingService.publishCompleteTransferEvent(confirmTransferDto.userId);
+      this.logger.log(`Sending confirmation for userId ${confirmTransferDto.userId} to RabbitMQ queue with pattern`);
+      const eventPayload = {
+        message: 'confirming transfer',
+        userId: confirmTransferDto.userId,
+        status: 'pending_user',
+      };
+
+      this.transferClient.emit('document.transfer.complete', eventPayload);
       
       return { userId: confirmTransferDto.userId, message: 'Transfer completed' };
     } catch (error) {
