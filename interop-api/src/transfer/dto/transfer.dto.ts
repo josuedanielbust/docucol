@@ -25,3 +25,32 @@ export class TransferResponseDto {
   filesPath?: string;
   message?: string;
 }
+
+export class TransferCitizenDto {
+  @IsString()
+  @IsNotEmpty()
+  id!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  citizenName!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  citizenEmail!: string;
+  
+  urlDocuments!: Record<string, string[]>;
+
+  citizenAddress?: string;
+
+  confirmAPI!: string;
+}
+
+export class TransferCitizenConfirmDto {
+  @IsNotEmpty()
+  id!: string | number;
+
+  @IsString()
+  @IsNotEmpty()
+  req_status!: string;
+}

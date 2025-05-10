@@ -11,7 +11,7 @@ export class CreateUserDto {
 
   @IsNotEmpty()
   @IsString()
-  last_name!: string;
+  last_name?: string;
 
   @IsNotEmpty()
   @IsString()
@@ -19,11 +19,11 @@ export class CreateUserDto {
 
   @IsNotEmpty()
   @IsString()
-  city!: string;
+  city?: string;
 
   @IsNotEmpty()
   @IsString()
-  department!: string;
+  department?: string;
 
   @IsNotEmpty()
   @IsEmail()

@@ -376,7 +376,7 @@ export class GovApiService {
    */
   async authenticateDocument(data: AuthenticateDocumentRequestDto): Promise<AuthenticateDocumentResponseDto> {
     try {
-      const response = this.httpService.post(
+      const response = this.httpService.put(
         `${this.apiBaseUrl}/authenticateDocument`,
         {
           idCitizen: data.userId,
