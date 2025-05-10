@@ -8,6 +8,7 @@ import UploadFilePage from './pages/UploadFilePage';
 import LoginPage from './pages/SignInPage';
 import DocumentsPage from './pages/DocumentsPage';
 import RegisterPage from './pages/SignUpPage';
+import ProfilePage from './pages/ProfilePage';
 import EditProfilePage from './pages/EditProfilePage';
 import OperadoresPage from './pages/OperadoresPage';
 import TransferPage from './pages/TransferPage';
@@ -18,7 +19,8 @@ function App() {
       <NavigationBar />
       <Routes>
         <Route path="/signup" element={<RegisterPage />} />
-        <Route path="/signin" element={<LoginPage />} />
+        <Route path="/" element={<LoginPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
         <Route path="/edit-profile" element={<EditProfilePage />} />
         <Route path="/upload" element={<UploadFilePage />} />
         <Route path="/my-documents" element={<DocumentsPage />} />

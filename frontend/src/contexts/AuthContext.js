@@ -1,6 +1,6 @@
 import { createContext, useContext, useState } from 'react';
 
-const AuthContext = createContext(); // ✅ No puede estar vacío
+const AuthContext = createContext(); 
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
