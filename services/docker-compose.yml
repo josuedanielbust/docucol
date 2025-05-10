@@ -1,6 +1,28 @@
 name: docucol
 
 services:
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=${NODE_ENV}
+      - PORT=${PORT}
+    ports:
+      - "3000:3000"
+    networks:
+      - docucol-network
+    depends_on:
+      - users-api
+      - document-api
+      - interop-api
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=PathPrefix(`/`)"
+      - "traefik.http.services.frontend.loadbalancer.server.port=${PORT}"
+      
+  # Database services (existing)
   # API Gateway
   traefik:
     image: traefik:v2.11

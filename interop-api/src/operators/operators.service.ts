@@ -24,8 +24,8 @@ export class OperatorsService {
         citizenName: `${data.user.first_name} ${data.user.last_name}`,
         citizenEmail: data.user.email,
         citizenAddress: data.user.address,
-        urlDocuments: data.documents.reduce((result: Record<string, string>, item: { title: string, presignedUrl: string }) => {
-          result[`${item.title}`] = item.presignedUrl;
+        urlDocuments: data.documents.reduce((result: Record<string, string[]>, item: { title: string, presignedUrl: string }) => {
+          result[`${item.title}`] = [item.presignedUrl];
           return result;
         }, {})
       }

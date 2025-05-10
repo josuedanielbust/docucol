@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Form, Button, Container, Alert, Card, Row, Col, Spinner } from 'react-bootstrap';
 import { FaSignInAlt, FaEnvelope, FaLock } from 'react-icons/fa';
 import axios from 'axios';
+import { signin } from '../services/authService';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -20,14 +21,17 @@ const LoginPage = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post('http://localhost/auth/signin', {
-        email,
-        password,
-      });
+      const response = await signin({ email, password });
+      login(response.user, response.access_token);
 
-      const { token, user } = response.data;
+      // const response = await axios.post('http://localhost/auth/signin', {
+      //   email,
+      //   password,
+      // });
 
-      login(user, token);
+      // const { token, user } = response.data;
+
+      // login(user, token);
       navigate('/my-documents');
     } catch (err) {
       setErrorMsg('Credenciales inválidas o error en el servidor.');
@@ -119,13 +123,13 @@ const LoginPage = () => {
 
               <Row>
                 <Col>
-                  <Button
+                  {/* <Button
                     variant="link"
                     className="w-100 text-decoration-none"
                     onClick={handleForgotPassword}
                   >
                     ¿Olvidaste tu contraseña?
-                  </Button>
+                  </Button> */}
                 </Col>
               </Row>
 

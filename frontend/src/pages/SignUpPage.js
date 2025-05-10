@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Container, Form, Button, Alert, Row, Col, Card } from 'react-bootstrap';
 import { FaUser, FaEnvelope, FaLock, FaMapMarkerAlt, FaCity, FaIdCard } from 'react-icons/fa';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { signup } from '../services/authService';
 
 const RegisterPage = () => {
   const navigate = useNavigate();
@@ -30,9 +30,9 @@ const RegisterPage = () => {
     setSuccess('');
 
     try {
-      await axios.post('http://localhost:3000/auth/signup', formData);
+      await signup(formData);
       setSuccess('Usuario registrado con éxito. Serás redirigido al login.');
-      setTimeout(() => navigate('/signin'), 2000);
+      setTimeout(() => navigate('/'), 2000);
     } catch (err) {
       console.error(err);
       setError('Error al registrar el usuario.');
