@@ -100,6 +100,7 @@ services:
       - MINIO_SECRET_KEY=${MINIO_ROOT_PASSWORD:-minioadmin}
       - MINIO_BUCKET=${MINIO_BUCKET:-docucol}
       - STORAGE_PUBLIC_URL=http://storage.docucol.local
+      - APP_DOMAIN=${APP_DOMAIN}
     depends_on:
       document-postgres:
         condition: service_healthy
@@ -178,6 +179,7 @@ services:
       - NODE_ENV=${NODE_ENV}
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@users-postgres:5432/${POSTGRES_DB}?schema=public
       - PORT=${PORT}
+      - APP_DOMAIN=${APP_DOMAIN}
     depends_on:
       users-postgres:
         condition: service_healthy
@@ -205,6 +207,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - APP_DOMAIN=${APP_DOMAIN}
     depends_on:
       - redis
     networks:
@@ -228,6 +231,7 @@ services:
       - EMAIL_HOST=mailhog
       - EMAIL_PORT=1025
       - EMAIL_FROM=notifications@docucol.com
+      - APP_DOMAIN=${APP_DOMAIN}
     depends_on:
       rabbitmq:
         condition: service_healthy
