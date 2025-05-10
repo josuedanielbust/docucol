@@ -62,7 +62,7 @@ export class TransferController {
   async transferCitizenConfirmUserId(
     @Param('id') userId: string,
   ): Promise<any> {
-    this.logger.log(`Confirmate Citizen transfer for document ${userId}`);
+    this.logger.log(`Confirming Citizen transfer for document ${userId}`);
     return this.transferService.transferCitizenConfirmUserId(userId);
   }
 
