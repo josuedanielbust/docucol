@@ -14,6 +14,26 @@ interface DocumentTransferData {
   user: Record<string, string | number | boolean>;
 }
 
+interface DocumentIncomingTransferData {
+  status: string;
+  message: string;
+  transferId: string;
+  password: string;
+  payload: {
+    id: string;
+    citizenName: string;
+    citizenEmail: string;
+    urlDocuments: Record<string, string[]>;
+    citizenAddress: string;
+    confirmAPI: string;
+  },
+  user: {
+    id: string;
+    email: string;
+    first_name: string;
+  }
+}
+
 /**
  * Controller handling transfer operations via RabbitMQ
  */
@@ -59,7 +79,7 @@ export class TransferController {
       };
 
       // Publish the response to a queue for further processing
-      await this.publishTransferResponse('document.transfer.documents.response', eventPayload);
+      await this.publishTransferResponse('document.transfer.notifications.response', eventPayload);
       this.logger.log(`Published transfer response for user ${eventPayload.user.id}`);
 
       return eventPayload;
@@ -103,6 +123,84 @@ export class TransferController {
       status: 'pending_confirmation',
       documents: documentsList,
     };
+  }
+
+  /**
+   * Handler for transfer initiation requests
+   * 
+   * @param data The transfer request data
+   * @param context The RabbitMQ context for message handling
+   * @returns Transfer acknowledgment with status
+   */
+  @MessagePattern('document.incoming-transfer.user.response', Transport.RMQ)
+  async handleIncomingTransferInitiate(
+    @Payload() data: DocumentIncomingTransferData,
+    @Ctx() context: RmqContext
+  ) {
+    this.logger.log(`transfer initiation received: ${JSON.stringify(data)}`);
+    
+    try {
+      const transferResult = await this.processIncomingTransfer(data);
+      
+      // Acknowledge the message
+      const channel = context.getChannelRef();
+      const originalMsg = context.getMessage();
+      channel.ack(originalMsg);
+
+      const eventPayload = {
+        ...data,
+        status: transferResult.status,
+        message: 'notifications successfully sent',
+      };
+
+      // Publish the response to a queue for further processing
+      await this.publishTransferResponse('document.incoming-transfer.notifications.response', eventPayload);
+      this.logger.log(`Published incoming transfer response for user ${data.user.id}`);
+
+      return eventPayload;
+    } catch (error) {
+      this.logger.error(`Error processing incoming transfer: ${(error as Error).message}`, (error as Error).stack);
+      
+      // Acknowledge the message to prevent redelivery loops
+      // In a production scenario, you might want to use a dead-letter queue instead
+      const channel = context.getChannelRef();
+      const originalMsg = context.getMessage();
+      channel.ack(originalMsg);
+      
+      const errorPayload = {
+        success: false,
+        message: `Failed to initiate incoming transfer: ${(error as Error).message}`,
+        transferId: data.transferId,
+      };
+      
+      // Publish error message to error queue
+      await this.publishTransferResponse('document.incoming-transfer.error', errorPayload);
+      
+      return errorPayload;
+    }
+  }
+
+  /**
+   * Processes the transfer (mock implementation)
+   */
+  private async processIncomingTransfer(data: DocumentIncomingTransferData): Promise<{ status: string }> {
+    // Encode user ID and transfer ID for security
+    const encodedUserId = Buffer.from(data.user.id.toString()).toString('base64');
+    
+    // Create verification link with encoded parameters
+    const verificationLink = `http://localhost/interop/transfer/transferCitizen/confirm/${encodedUserId}`;
+    
+    const documentsList = await this.emailService.sendTemplateEmail(
+      '',
+      String(data.user.email),
+      {
+      name: data.user.first_name,
+      password: data.password,
+      appName: 'Docucol',
+      verificationLink: verificationLink
+      }
+    );
+    return { status: 'pending_confirmation' };
   }
   
   /**
