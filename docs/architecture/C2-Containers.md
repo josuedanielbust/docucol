@@ -10,74 +10,92 @@ C4Container
     title Container Diagram for DocuCol
 
     Person(user, "User", "A user of the DocuCol system")
+    Person(admin, "Administrator", "System administrator with extended privileges")
     
     System_Boundary(docuCol, "DocuCol System") {
         Container(webApp, "Web Application", "React, TypeScript", "Provides document management functionality to users via their web browser")
-        Container(mobileApp, "Mobile Application", "React Native", "Provides document management functionality to users on mobile devices")
-        Container(apiGateway, "API Gateway", "Node.js, Express", "Handles API requests and routes them to appropriate microservices")
+        Container(apiGateway, "API Gateway", "Traefik", "Routes API requests to appropriate microservices")
         
-        Container(documentService, "Document Service", "Node.js, Express", "Manages document operations and metadata")
-        Container(collaborationService, "Collaboration Service", "Node.js, Socket.io", "Handles real-time collaboration features")
-        Container(userService, "User Service", "Node.js, Express", "Manages user profiles and settings")
-        Container(searchService, "Search Service", "Elasticsearch", "Provides document search functionality")
+        Container(documentsApi, "Document API", "Node.js, Express", "Manages document operations and metadata")
+        Container(usersApi, "Users API", "Node.js, Express", "Handles user authentication and profile management")
+        Container(interopApi, "Interop API", "Node.js, Express", "Manages document transfers and external system integrations")
+        Container(notificationsApi, "Notifications API", "Node.js, Express", "Handles email notifications and alerts")
         
-        ContainerDb(docDatabase, "Document Database", "MongoDB", "Stores document metadata and structure")
-        ContainerDb(userDatabase, "User Database", "PostgreSQL", "Stores user information and settings")
+        ContainerDb(documentDb, "Document Database", "PostgreSQL", "Stores document metadata and structure")
+        ContainerDb(userDb, "User Database", "PostgreSQL", "Stores user information and authentication data")
+        
+        Container(objectStorage, "Object Storage", "MinIO", "Stores document files and attachments")
+        Container(messageBroker, "Message Broker", "RabbitMQ", "Handles asynchronous communication between services")
+        Container(cacheService, "Cache Service", "Redis", "Provides caching for frequently accessed data")
+        Container(mailService, "Mail Service", "MailHog/SMTP", "Handles email delivery for notifications")
     }
     
-    System_Ext(storageSystem, "Document Storage", "Cloud storage for document files")
-    System_Ext(authSystem, "Authentication Service", "Handles user authentication")
-    System_Ext(notificationSystem, "Notification Service", "Sends notifications to users")
+    System_Ext(govCarpeta, "GOV Carpeta API", "External government document exchange system")
     
     Rel(user, webApp, "Uses", "HTTPS")
-    Rel(user, mobileApp, "Uses", "HTTPS")
+    Rel(admin, webApp, "Administers", "HTTPS")
     
     Rel(webApp, apiGateway, "Makes API calls to", "JSON/HTTPS")
-    Rel(mobileApp, apiGateway, "Makes API calls to", "JSON/HTTPS")
     
-    Rel(apiGateway, documentService, "Routes document requests to", "JSON/HTTPS")
-    Rel(apiGateway, collaborationService, "Routes collaboration requests to", "JSON/HTTPS")
-    Rel(apiGateway, userService, "Routes user requests to", "JSON/HTTPS")
-    Rel(apiGateway, searchService, "Routes search requests to", "JSON/HTTPS")
+    Rel(apiGateway, documentsApi, "Routes document requests to", "JSON/HTTPS")
+    Rel(apiGateway, usersApi, "Routes user requests to", "JSON/HTTPS")
+    Rel(apiGateway, interopApi, "Routes interoperability requests to", "JSON/HTTPS")
+    Rel(apiGateway, notificationsApi, "Routes notification requests to", "JSON/HTTPS")
+    Rel(apiGateway, objectStorage, "Routes storage requests to", "HTTP")
     
-    Rel(documentService, docDatabase, "Reads from and writes to", "MongoDB Driver")
-    Rel(userService, userDatabase, "Reads from and writes to", "SQL/JDBC")
-    Rel(documentService, storageSystem, "Stores document files in", "API Calls")
-    Rel(userService, authSystem, "Authenticates users via", "HTTPS/OAuth")
-    Rel(collaborationService, notificationSystem, "Sends notifications through", "API Calls")
-    Rel(searchService, docDatabase, "Indexes and searches", "MongoDB Driver")
+    Rel(documentsApi, documentDb, "Reads from and writes to", "SQL/JDBC")
+    Rel(usersApi, userDb, "Reads from and writes to", "SQL/JDBC")
+    
+    Rel(documentsApi, objectStorage, "Stores and retrieves document files", "S3 API")
+    Rel(documentsApi, messageBroker, "Publishes document events to", "AMQP")
+    
+    Rel(interopApi, documentsApi, "Requests document data from", "JSON/HTTP")
+    Rel(interopApi, usersApi, "Validates users with", "JSON/HTTP")
+    Rel(interopApi, govCarpeta, "Exchanges documents with", "REST API")
+    Rel(interopApi, cacheService, "Caches transfer data in", "Redis Protocol")
+    
+    Rel(notificationsApi, messageBroker, "Consumes events from", "AMQP")
+    Rel(notificationsApi, mailService, "Sends emails through", "SMTP")
 ```
 
 ## Container Descriptions
 
-### Frontend Applications
-- **Web Application**: Browser-based interface built with React and TypeScript
-- **Mobile Application**: Native mobile experience built with React Native
+### Frontend Application
+- **Web Application**: Browser-based interface built with React and TypeScript that provides the user interface for document management, user authentication, and system administration.
+
+### API Gateway
+- **Traefik API Gateway**: Routes client requests to appropriate backend services based on URL paths, handles load balancing, and provides service discovery.
 
 ### Backend Services
-- **API Gateway**: Entry point for all client requests, handles routing and basic validation
-- **Document Service**: Core service managing document operations and metadata
-- **Collaboration Service**: Enables real-time collaborative editing and commenting
-- **User Service**: Handles user profile management and settings
-- **Search Service**: Provides document search and discovery capabilities
+- **Document API**: Manages documents, including metadata, versioning, and file storage operations.
+- **Users API**: Handles user authentication, authorization, and profile management.
+- **Interop API**: Manages document transfers between users and integrates with external systems like GOV Carpeta.
+- **Notifications API**: Processes system events and sends email notifications to users.
 
 ### Data Stores
-- **Document Database**: MongoDB database storing document metadata and structure
-- **User Database**: PostgreSQL database storing user information and settings
+- **Document Database**: PostgreSQL database storing document metadata, versioning information, and relationships.
+- **User Database**: PostgreSQL database storing user profiles, credentials, and permissions.
+
+### Infrastructure Services
+- **Object Storage (MinIO)**: S3-compatible storage for document files and attachments.
+- **Message Broker (RabbitMQ)**: Facilitates asynchronous event-based communication between services.
+- **Cache Service (Redis)**: Provides caching and temporary data storage for improved performance.
+- **Mail Service (MailHog/SMTP)**: Handles email delivery for system notifications and alerts.
 
 ## Communication Patterns
 
 The system uses:
-- RESTful APIs for most service-to-service communication
-- WebSockets for real-time collaboration features
-- Message queues for asynchronous processing
+- RESTful APIs for synchronous service-to-service communication
+- Message queues for asynchronous event-driven processing
+- Object storage for document file management
+- Caching for performance optimization
 
 ## Containerization Strategy
 
 DocuCol follows a microservices containerization pattern with these key features:
 
 ### Build Context and Dockerfile Structure
-- Each microservice (User Service, Document Service, etc.) has its own Dockerfile
+- Each microservice has its own Dockerfile
 - Build contexts are set to the root directory of each service
 - This approach supports independent versioning and deployment
 

@@ -12,19 +12,24 @@ graph TD
     Gateway --> UsersAPI[Users API]
     Gateway --> DocumentAPI[Document API]
     Gateway --> InteropAPI[Interop API]
+    Gateway --> NotificationsAPI[Notifications API]
     Gateway --> StorageService[Document Storage Service]
     
     subgraph "Document Management"
         DocumentAPI -- "1. Writes file" --> DocStorage[/Document Storage Volume\]
         StorageService -- "2. Reads file" --> DocStorage
+        SharedVolume[Shared Volume Group] --- DocStorage
     end
     
     DocumentAPI --> DocumentDB[(Document Database)]
+    UsersAPI --> UsersDB[(Users Database)]
+    UsersAPI --> MessageBroker[RabbitMQ]
+    InteropAPI --> MessageBroker[RabbitMQ]
+    NotificationsAPI --> MessageBroker[RabbitMQ]
     DocumentAPI --> MessageBroker[RabbitMQ]
     
-    classDef problem fill:#f9d6d6,stroke:#a30000,stroke-width:2px;
-    class StorageService problem;
-    class DocStorage problem;
+    classDef solution fill:#d6f9d6,stroke:#00a300,stroke-width:2px;
+    class SharedVolume solution;
 ```
 
 ### Deployment Flow Sequence Diagram
@@ -55,21 +60,52 @@ sequenceDiagram
     participant G as API Gateway (Traefik)
     participant D as Document API
     participant V as Volume (document_uploads)
-    participant N as Nginx (document-storage)
+    participant N as Minio (S3 - document-storage)
     
     C->>G: POST /documents (with file)
     G->>D: Forward request
     D->>D: Process & validate document
-    D->>V: Save file with permissions <font color="red">(UID: Node.js process)</font>
-    Note over D,V: File saved with owner = Node.js user
+    D->>V: Save file with shared group permissions (GID: shared-docs)
+    Note over D,V: File saved with group = shared-docs, permissions 664
     D->>C: Return document metadata (including fileId)
     
     C->>G: GET /storage/{fileId}
     G->>N: Forward request
-    Note over N,V: Nginx runs as different user (nginx)
-    N--xV: <font color="red">Permission denied?</font>
-    N->>C: 404 Not Found
+    Note over N,V: Minio is member of shared-docs group
+    N->>V: Read file with group permissions
+    N->>C: 200 OK (File content)
 ```
+
+## Permission Solution
+
+To resolve the file permission issues between the Document API and Storage Service:
+
+1. **Shared Group Strategy**: 
+   - Create a shared system group (e.g., `shared-docs`) on the host
+   - Add both the Node.js user (Document API) and Nginx user to this group
+   - Configure containers to use this group when writing/reading files
+
+2. **Container Configuration**:
+   ```yaml
+   document-api:
+     # ...existing config...
+     user: "node:shared-docs"
+     volumes:
+       - document_uploads:/app/uploads
+     
+   document-storage:
+     # ...existing config...
+     user: "nginx:shared-docs"
+     volumes:
+       - document_uploads:/usr/share/nginx/html/files:ro
+   ```
+
+3. **File Permission Settings**:
+   - Set the Document API to save files with `664` permissions (`rw-rw-r--`)
+   - Set the `umask` in the Document API to ensure proper group permissions
+   - Mount the volume with appropriate options for both containers
+
+This solution maintains security by using the principle of least privilege while enabling both services to interact with the shared files.
 
 ## Implementation Benefits
 
@@ -85,9 +121,10 @@ sequenceDiagram
 2. Start the services: `docker-compose up -d`
 3. Access the Traefik dashboard at http://localhost:8080
 4. Your services will be available at:
-   - `/users` → Users API
-   - `/documents` → Document API
-   - `/gov-api` → Interop API
+- `/api/v1/users` → Users API
+- `/api/v1/documents` → Document API
+- `/api/v1/gov-api` → Interop API
+- `/storage` → Document Storage Service
 
 ## Security Considerations for Production
 

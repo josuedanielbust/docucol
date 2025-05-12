@@ -121,19 +121,19 @@ export class TransferController {
 
   @MessagePattern('transfer.get.user.details.response', Transport.RMQ)
   async handleGetUserDetails(
-    @Payload() data: { userId: string, name: string, email: string, address: string },
+    @Payload() data: { id: string, name: string, email: string, address: string },
     @Ctx() context: RmqContext
   ) {
     this.logger.log(`get user details received: ${JSON.stringify(data)}`);
     
     try {
       // Get user details from the message payload
-      const userId = data.userId;
+      const userId = data.id;
       this.logger.log(`Processing user details for ID: ${userId}`);
 
       // Call the government API service to register the user
       const registrationResponse = await this.govApiService.registerUser({
-        userId: data.userId,
+        userId: data.id,
         name: data.name,
         address: data.address,
         email: data.email
@@ -157,7 +157,62 @@ export class TransferController {
         userId: userId
       };
     } catch (error) {
-      this.logger.error(`Failed to register user ${data.userId} with government API: ${(error as Error).message}`, (error as Error).stack);
+      this.logger.error(`Failed to register user ${data.id} with government API: ${(error as Error).message}`, (error as Error).stack);
+      
+      // Acknowledge the message to prevent redelivery loops
+      // In a production scenario, you might want to use a dead-letter queue instead
+      const channel = context.getChannelRef();
+      const originalMsg = context.getMessage();
+      channel.ack(originalMsg);
+      
+      const errorPayload = {
+        success: false,
+        message: `Failed to register user: ${(error as Error).message}`,
+      };
+      
+      return errorPayload;
+    }
+  }
+
+  @MessagePattern('user.created', Transport.RMQ)
+  async handleUserCreated(
+    @Payload() data: { id: string, name: string, email: string, address: string },
+    @Ctx() context: RmqContext
+  ) {
+    this.logger.log(`get user details received: ${JSON.stringify(data)}`);
+    
+    try {
+      // Get user details from the message payload
+      const userId = data.id;
+      this.logger.log(`Processing user details for ID: ${userId}`);
+
+      // Call the government API service to register the user
+      const registrationResponse = await this.govApiService.registerUser({
+        userId: data.id,
+        name: data.name,
+        address: data.address,
+        email: data.email
+      });
+
+      if (!registrationResponse.registered) {
+        throw new Error(`Failed to register user ${userId} with government API`);
+      }
+
+      this.logger.log(`Successfully registered user ${userId} with government API`);
+
+      // Acknowledge the message
+      const channel = context.getChannelRef();
+      const originalMsg = context.getMessage();
+      channel.ack(originalMsg);
+
+      // Return successful response
+      return {
+        success: true,
+        message: `User ${userId} successfully registered`,
+        userId: userId
+      };
+    } catch (error) {
+      this.logger.error(`Failed to register user ${data.id} with government API: ${(error as Error).message}`, (error as Error).stack);
       
       // Acknowledge the message to prevent redelivery loops
       // In a production scenario, you might want to use a dead-letter queue instead
