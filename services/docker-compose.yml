@@ -1,7 +1,6 @@
 name: docucol
 
 services:
-
   frontend:
     build:
       context: ../frontend
@@ -200,6 +199,8 @@ services:
       - NODE_ENV=${NODE_ENV}
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@users-postgres:5432/${POSTGRES_DB}?schema=public
       - PORT=${PORT}
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+      - RABBITMQ_QUEUE=docucol_events
     depends_on:
       users-postgres:
         condition: service_healthy
@@ -224,9 +225,13 @@ services:
       - USERS_API_URL=http://users-api:${PORT}
       - DOCUMENT_API_URL=http://document-api:${PORT}
       - RABBITMQ_URL=amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
+      - RABBITMQ_QUEUE=docucol_events
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - GOV_CARPETA_BASE_URL=https://govcarpeta-apis-4905ff3c005b.herokuapp.com/apis
+      - OPERATOR_ID=68056ec327d25f0015076aba
+      - OPERATOR_NAME=DocuCol
     depends_on:
       - redis
     networks:
@@ -247,9 +252,16 @@ services:
       - NODE_ENV=${NODE_ENV}
       - PORT=${PORT}
       - RABBITMQ_URL=amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
-      - EMAIL_HOST=mailhog
-      - EMAIL_PORT=1025
-      - EMAIL_FROM=notifications@docucol.com
+      - RABBITMQ_QUEUE=docucol_events
+      - OPERATOR_NAME=DocuCol
+      - SMTP_HOST=${SMTP_HOST:-mailhog}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_SECURE=${SMTP_SECURE}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - SMTP_DEFAULT_FROM=DocuCol Notifications <notifications@docucol.com>
+      - SMTP_REJECT_UNAUTHORIZED=true
+      - EMAIL_TEMPLATE_DIR=./src/templates/emails
     depends_on:
       rabbitmq:
         condition: service_healthy

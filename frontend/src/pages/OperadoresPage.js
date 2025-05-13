@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Table, Container, Form, Button } from 'react-bootstrap';
 import { initiateTransfer } from '../services/TransferService'; // Importar la función de la API
+import { useAuth } from '../contexts/AuthContext';
 
 const OperadoresPage = () => {
+  const { user } = useAuth();
   const [operadores, setOperadores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -10,12 +12,21 @@ const OperadoresPage = () => {
 
   useEffect(() => {
     // Cargar datos de ejemplo directamente
-    const fetchOperadores = () => {
-      setOperadores([
-        { id: 1, name: 'Operador Ejemplo 1', email: 'ejemplo1@correo.com' },
-        { id: 2, name: 'Operador Ejemplo 2', email: 'ejemplo2@correo.com' },
-      ]);
-      setLoading(false);
+    const fetchOperadores = async () => {
+      // Fetch operators from the API
+      try {
+        const response = await fetch('http://localhost/interop/gov-api/operators');
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        const data = await response.json();
+        setOperadores(data.operators);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching operators:", error);
+        // Fallback to example data if API call fails
+        setLoading(false);
+      }
     };
 
     fetchOperadores();
@@ -28,8 +39,7 @@ const OperadoresPage = () => {
           return; // Si el usuario cancela, no se realiza la transferencia
         }
 
-      const userId = 123; // Aquí puedes obtener el userId dinámicamente si es necesario
-      const payload = { userId, operadorId, includeDocuments: true };
+      const payload = { userId: user.id, operatorId: operadorId };
       await initiateTransfer(payload); // Llamada a la API
       setMessage(`Transferencia iniciada con éxito al operador ${operadorId}.`);
       setTimeout(() => {setMessage(''); }, 3000);
@@ -63,7 +73,6 @@ const OperadoresPage = () => {
             <tr>
               <th>ID</th>
               <th>Nombre</th>
-              <th>Correo</th>
               <th>Cambiar Operador</th>
             </tr>
           </thead>
@@ -73,14 +82,13 @@ const OperadoresPage = () => {
                 <td colSpan="4" className="text-center">Cargando...</td>
               </tr>
             ) : operadores.map((operador) => (
-              <tr key={operador.id}>
-                <td>{operador.id}</td>
-                <td>{operador.name}</td>
-                <td>{operador.email}</td>
+              <tr key={operador._id}>
+                <td>{operador._id}</td>
+                <td>{operador.operatorName}</td>
                 <td>
                   <Button
                     variant="success"
-                    onClick={() => processTransfer(operador.id)}>
+                    onClick={() => processTransfer(operador._id.toString())}>
                     Transferencia
                   </Button>
                 </td>

@@ -1,4 +1,5 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, Controller, Logger, Inject } from '@nestjs/common';
+import { MessagePattern, Payload, Ctx, RmqContext, Transport, ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from '../prisma/prisma.service';
 import { SignupDto } from './dto/signup.dto';
 import { SigninDto } from './dto/signin.dto';
@@ -11,6 +12,7 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    @Inject('INTEROP_SERVICE') private readonly interopTransferClient: ClientProxy
   ) {}
 
   async signup(signupDto: SignupDto): Promise<{ user: Partial<User>; access_token: string; message: string }> {
@@ -45,6 +47,8 @@ export class AuthService {
 
     // Remove password from response
     const { password, ...userWithoutPassword } = user;
+
+    await this.interopTransferClient.emit('user.created', user);
 
     return {
       user: userWithoutPassword,

@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Modal, Button } from 'react-bootstrap';
 import { initiateTransfer, confirmTransfer } from '../services/TransferService';
+import { useAuth } from '../contexts/AuthContext';
 
 const TransferPage = () => {
+  const { user, token, login } = useAuth();
   const [userId, setUserId] = useState('');
   const [operadorId, setOperadorId] = useState(''); // Nuevo estado para el ID del operador
   const [transferId, setTransferId] = useState('');
@@ -21,7 +23,7 @@ const TransferPage = () => {
 
   const handleInitiateTransfer = async () => {
     try {
-      if (!userId || !operadorId) {
+      if (!user.id || !operadorId) {
         showMessage('Por favor, ingresa el ID de usuario y el ID del operador.', 'error');
         return;
       }

@@ -40,25 +40,35 @@ sequenceDiagram
     participant T as Transfer Service
     participant U as Users API
     participant D as Document API
+    participant N as Notification Service
     
     note over C,D: Initiate Transfer Flow
     C->>G: POST /transfer/initiate 
     G->>T: Forward request
-    T->>D: Validate document ownership
-    D->>T: Confirm document belongs to sender
-    T->>U: Validate recipient exists
-    U->>T: Confirm recipient is valid user
-    T->>T: Create transfer record
-    T->>C: Return transfer details with transferId
     
-    note over C,D: Confirm Transfer Flow
-    C->>G: POST /transfer/confirm
-    G->>T: Forward request
-    T->>T: Validate transfer status
-    T->>D: Update document ownership
-    D->>T: Confirm ownership updated
-    T->>T: Update transfer record
-    T->>C: Return updated transfer status
+    %% Validation Steps
+    T->>D: Validate document ownership
+    
+    alt Document not found or not owned
+        D-->>T: Error: Invalid document ownership
+        T-->>C: 403 Forbidden: Not authorized to transfer
+    else Document valid
+        D->>T: Confirm document belongs to sender
+        
+        T->>U: Validate recipient exists
+        
+        alt Recipient not found
+            U-->>T: Error: Recipient not found
+            T-->>C: 404 Not Found: Invalid recipient
+        else Recipient valid
+            U->>T: Confirm recipient is valid user
+            
+            T->>T: Create transfer record
+            T->>N: Send transfer notification to recipient
+            N-->>T: Notification sent
+            T->>C: Return transfer details with transferId
+        end
+    end
 ```
 
 ## Component Responsibilities
